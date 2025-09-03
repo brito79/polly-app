@@ -1,84 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PlusCircle, BarChart3, Users, Vote, TrendingUp, Eye, Calendar } from "lucide-react";
+import { PlusCircle, BarChart3, Users, Vote, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import type { Poll, AuthUser } from "@/types";
-
-// Mock user data
-const mockUser: AuthUser = {
-  id: "current-user",
-  email: "user@example.com",
-  username: "current_user",
-  avatar: undefined,
-};
-
-// Mock user's polls
-const mockUserPolls: Poll[] = [
-  {
-    id: "user-poll-1",
-    title: "Team Lunch Preferences",
-    description: "What type of food should we order for the team lunch?",
-    options: [
-      { id: "up1a", pollId: "user-poll-1", text: "Pizza", votes: [], voteCount: 12, order: 1 },
-      { id: "up1b", pollId: "user-poll-1", text: "Chinese", votes: [], voteCount: 8, order: 2 },
-      { id: "up1c", pollId: "user-poll-1", text: "Mexican", votes: [], voteCount: 15, order: 3 },
-    ],
-    creatorId: "current-user",
-    creator: mockUser,
-    isActive: true,
-    allowMultipleChoices: false,
-    createdAt: new Date(Date.now() - 3600000), // 1 hour ago
-    updatedAt: new Date(),
-    totalVotes: 35,
-  },
-  {
-    id: "user-poll-2",
-    title: "Meeting Time Survey",
-    options: [
-      { id: "up2a", pollId: "user-poll-2", text: "9:00 AM", votes: [], voteCount: 5, order: 1 },
-      { id: "up2b", pollId: "user-poll-2", text: "2:00 PM", votes: [], voteCount: 7, order: 2 },
-    ],
-    creatorId: "current-user",
-    creator: mockUser,
-    isActive: false,
-    allowMultipleChoices: false,
-    createdAt: new Date(Date.now() - 86400000), // 1 day ago
-    updatedAt: new Date(),
-    totalVotes: 12,
-  },
-];
 
 export default function DashboardPage() {
-  const [user] = useState<AuthUser>(mockUser);
-  const [userPolls, setUserPolls] = useState<Poll[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, loading, session } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
-    const loadDashboardData = async () => {
-      setIsLoading(true);
-      try {
-        // TODO: Replace with actual API calls
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setUserPolls(mockUserPolls);
-      } catch (error) {
-        console.error("Failed to load dashboard data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    if (!loading && !session) {
+      router.push("/auth/login");
+    }
+  }, [loading, session, router]);
 
-    loadDashboardData();
-  }, []);
-
-  const totalVotes = userPolls.reduce((sum, poll) => sum + poll.totalVotes, 0);
-  const activePolls = userPolls.filter(poll => poll.isActive).length;
-
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center py-16">
@@ -89,6 +30,10 @@ export default function DashboardPage() {
     );
   }
 
+  if (!session) {
+    return null;
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-6xl mx-auto space-y-8">
@@ -96,13 +41,13 @@ export default function DashboardPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-4">
             <Avatar className="h-12 w-12">
-              <AvatarImage src={user.avatar} alt={user.username} />
+              <AvatarImage src={user?.user_metadata?.avatar_url} alt={user?.email} />
               <AvatarFallback>
-                {user.username.charAt(0).toUpperCase()}
+                {user?.email?.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div>
-              <h1 className="text-3xl font-bold">Welcome back, {user.username}!</h1>
+              <h1 className="text-3xl font-bold">Welcome back, {user?.email}!</h1>
               <p className="text-muted-foreground">Here&apos;s an overview of your polling activity</p>
             </div>
           </div>
@@ -122,9 +67,9 @@ export default function DashboardPage() {
               <BarChart3 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{userPolls.length}</div>
+              <div className="text-2xl font-bold">0</div>
               <p className="text-xs text-muted-foreground">
-                {activePolls} active
+                0 active
               </p>
             </CardContent>
           </Card>
@@ -135,7 +80,7 @@ export default function DashboardPage() {
               <Vote className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalVotes}</div>
+              <div className="text-2xl font-bold">0</div>
               <p className="text-xs text-muted-foreground">
                 Across all polls
               </p>
@@ -148,7 +93,7 @@ export default function DashboardPage() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{activePolls}</div>
+              <div className="text-2xl font-bold">0</div>
               <p className="text-xs text-muted-foreground">
                 Currently accepting votes
               </p>
@@ -162,7 +107,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {userPolls.length > 0 ? Math.round(totalVotes / userPolls.length) : 0}
+                0
               </div>
               <p className="text-xs text-muted-foreground">
                 Votes per poll
@@ -187,60 +132,19 @@ export default function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {userPolls.length === 0 ? (
-              <div className="text-center py-8">
-                <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No polls yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  Create your first poll to start gathering opinions
-                </p>
-                <Link href="/polls/create">
-                  <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Create Your First Poll
-                  </Button>
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {userPolls.map((poll) => (
-                  <div
-                    key={poll.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold">{poll.title}</h3>
-                        <Badge variant={poll.isActive ? "default" : "secondary"}>
-                          {poll.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {poll.description}
-                      </p>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Vote className="h-3 w-3" />
-                          {poll.totalVotes} votes
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {new Date(poll.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Link href={`/polls/${poll.id}`}>
-                        <Button variant="outline" size="sm">
-                          <Eye className="mr-2 h-3 w-3" />
-                          View
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className="text-center py-8">
+              <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No polls yet</h3>
+              <p className="text-muted-foreground mb-4">
+                Create your first poll to start gathering opinions
+              </p>
+              <Link href="/polls/create">
+                <Button>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Create Your First Poll
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
 

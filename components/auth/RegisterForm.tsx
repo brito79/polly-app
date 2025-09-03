@@ -6,49 +6,49 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import type { RegisterCredentials } from "@/types";
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
 
-interface RegisterFormProps {
-  onSubmit: (credentials: RegisterCredentials) => Promise<void>;
-  isLoading?: boolean;
-}
-
-export function RegisterForm({ onSubmit, isLoading = false }: RegisterFormProps) {
-  const [credentials, setCredentials] = useState<RegisterCredentials>({
-    email: "",
-    username: "",
-    password: "",
-    confirmPassword: "",
-  });
-  const [errors, setErrors] = useState<Partial<RegisterCredentials>>({});
+export function RegisterForm() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrors({});
+    setError(null);
+    setSuccess(null);
 
-    // Basic validation
-    const newErrors: Partial<RegisterCredentials> = {};
-    if (!credentials.email) newErrors.email = "Email is required";
-    if (!credentials.username) newErrors.username = "Username is required";
-    if (!credentials.password) newErrors.password = "Password is required";
-    if (!credentials.confirmPassword) {
-      newErrors.confirmPassword = "Please confirm your password";
-    } else if (credentials.password !== credentials.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
-    }
-    if (credentials.password && credentials.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
       return;
     }
 
-    try {
-      await onSubmit(credentials);
-    } catch (error) {
-      console.error("Register error:", error);
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+
+    setIsLoading(true);
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    setIsLoading(false);
+
+    if (error) {
+      setError(error.message);
+    } else {
+      setSuccess("Registration successful! Please check your email to confirm your account.");
+      setTimeout(() => {
+        router.push('/auth/login');
+      }, 3000);
     }
   };
 
@@ -62,38 +62,17 @@ export function RegisterForm({ onSubmit, isLoading = false }: RegisterFormProps)
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && <p className="text-sm text-red-500">{error}</p>}
+          {success && <p className="text-sm text-green-500">{success}</p>}
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
               placeholder="Enter your email"
-              value={credentials.email}
-              onChange={(e) =>
-                setCredentials({ ...credentials, email: e.target.value })
-              }
-              className={errors.email ? "border-red-500" : ""}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
-            {errors.email && (
-              <p className="text-sm text-red-500">{errors.email}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
-            <Input
-              id="username"
-              type="text"
-              placeholder="Choose a username"
-              value={credentials.username}
-              onChange={(e) =>
-                setCredentials({ ...credentials, username: e.target.value })
-              }
-              className={errors.username ? "border-red-500" : ""}
-            />
-            {errors.username && (
-              <p className="text-sm text-red-500">{errors.username}</p>
-            )}
           </div>
 
           <div className="space-y-2">
@@ -102,15 +81,9 @@ export function RegisterForm({ onSubmit, isLoading = false }: RegisterFormProps)
               id="password"
               type="password"
               placeholder="Create a password"
-              value={credentials.password}
-              onChange={(e) =>
-                setCredentials({ ...credentials, password: e.target.value })
-              }
-              className={errors.password ? "border-red-500" : ""}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
-            {errors.password && (
-              <p className="text-sm text-red-500">{errors.password}</p>
-            )}
           </div>
 
           <div className="space-y-2">
@@ -119,15 +92,9 @@ export function RegisterForm({ onSubmit, isLoading = false }: RegisterFormProps)
               id="confirmPassword"
               type="password"
               placeholder="Confirm your password"
-              value={credentials.confirmPassword}
-              onChange={(e) =>
-                setCredentials({ ...credentials, confirmPassword: e.target.value })
-              }
-              className={errors.confirmPassword ? "border-red-500" : ""}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
             />
-            {errors.confirmPassword && (
-              <p className="text-sm text-red-500">{errors.confirmPassword}</p>
-            )}
           </div>
 
           <Button type="submit" className="w-full" disabled={isLoading}>

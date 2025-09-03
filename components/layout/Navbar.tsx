@@ -14,16 +14,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, Home, PlusCircle, BarChart3, User, Settings, LogOut } from "lucide-react";
-import type { AuthUser } from "@/types";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/lib/supabase";
 
-interface NavbarProps {
-  user?: AuthUser | null;
-  onLogout?: () => void;
-}
-
-export function Navbar({ user, onLogout }: NavbarProps) {
+export function Navbar() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const router = useRouter();
+  const { user, session } = useAuth();
 
   const navigation = [
     { name: "Home", href: "/", icon: Home },
@@ -31,10 +28,8 @@ export function Navbar({ user, onLogout }: NavbarProps) {
     { name: "Create Poll", href: "/polls/create", icon: PlusCircle },
   ];
 
-  const handleLogout = () => {
-    if (onLogout) {
-      onLogout();
-    }
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     router.push("/");
   };
 
@@ -66,14 +61,14 @@ export function Navbar({ user, onLogout }: NavbarProps) {
 
           {/* User Menu / Auth Buttons */}
           <div className="flex items-center space-x-4">
-            {user ? (
+            {session ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.avatar} alt={user.username} />
+                      <AvatarImage src={user?.user_metadata?.avatar_url} alt={user?.email} />
                       <AvatarFallback>
-                        {user.username.charAt(0).toUpperCase()}
+                        {user?.email?.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -81,10 +76,7 @@ export function Navbar({ user, onLogout }: NavbarProps) {
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1 leading-none">
-                      <p className="font-medium">{user.username}</p>
-                      <p className="w-[200px] truncate text-sm text-muted-foreground">
-                        {user.email}
-                      </p>
+                      <p className="font-medium">{user?.email}</p>
                     </div>
                   </div>
                   <DropdownMenuSeparator />
@@ -140,7 +132,7 @@ export function Navbar({ user, onLogout }: NavbarProps) {
                     </Link>
                   ))}
                   
-                  {!user && (
+                  {!session && (
                     <>
                       <div className="border-t pt-4 mt-4">
                         <div className="space-y-2">

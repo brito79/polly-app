@@ -6,38 +6,44 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import type { LoginCredentials } from "@/types";
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
 
-interface LoginFormProps {
-  onSubmit: (credentials: LoginCredentials) => Promise<void>;
-  isLoading?: boolean;
-}
-
-export function LoginForm({ onSubmit, isLoading = false }: LoginFormProps) {
-  const [credentials, setCredentials] = useState<LoginCredentials>({
-    email: "",
-    password: "",
-  });
-  const [errors, setErrors] = useState<Partial<LoginCredentials>>({});
+export function LoginForm() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrors({});
+    setError(null);
+    setIsLoading(true);
 
     // Basic validation
-    const newErrors: Partial<LoginCredentials> = {};
-    if (!credentials.email) newErrors.email = "Email is required";
-    if (!credentials.password) newErrors.password = "Password is required";
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+    if (!email) {
+      setError("Email is required");
+      setIsLoading(false);
+      return;
+    }
+    if (!password) {
+      setError("Password is required");
+      setIsLoading(false);
       return;
     }
 
-    try {
-      await onSubmit(credentials);
-    } catch (error) {
-      console.error("Login error:", error);
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    setIsLoading(false);
+
+    if (error) {
+      setError(error.message);
+    } else {
+      router.push('/dashboard');
     }
   };
 
@@ -51,21 +57,22 @@ export function LoginForm({ onSubmit, isLoading = false }: LoginFormProps) {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded-md">
+              {error}
+            </div>
+          )}
+          
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
               placeholder="Enter your email"
-              value={credentials.email}
-              onChange={(e) =>
-                setCredentials({ ...credentials, email: e.target.value })
-              }
-              className={errors.email ? "border-red-500" : ""}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
             />
-            {errors.email && (
-              <p className="text-sm text-red-500">{errors.email}</p>
-            )}
           </div>
 
           <div className="space-y-2">
@@ -74,15 +81,10 @@ export function LoginForm({ onSubmit, isLoading = false }: LoginFormProps) {
               id="password"
               type="password"
               placeholder="Enter your password"
-              value={credentials.password}
-              onChange={(e) =>
-                setCredentials({ ...credentials, password: e.target.value })
-              }
-              className={errors.password ? "border-red-500" : ""}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
             />
-            {errors.password && (
-              <p className="text-sm text-red-500">{errors.password}</p>
-            )}
           </div>
 
           <Button type="submit" className="w-full" disabled={isLoading}>
