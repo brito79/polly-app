@@ -14,8 +14,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, Home, PlusCircle, BarChart3, User, Settings, LogOut } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/context/AuthContext";
 
 export function Navbar() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);

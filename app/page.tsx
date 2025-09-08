@@ -51,7 +51,7 @@ export default function Home() {
             easy-to-use polls that deliver real insights.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/auth/login?redirectTo=/polls/create">
+            <Link href="/polls/create">
               <Button size="lg" className="text-lg px-8">
                 Create Your First Poll
                 <ArrowRight className="ml-2 h-5 w-5" />

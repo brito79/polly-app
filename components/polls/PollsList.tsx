@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,6 @@ import { PollCard } from "./PollCard";
 import { Search, Filter, Plus } from "lucide-react";
 import Link from "next/link";
 import type { Poll } from "@/types";
-import { useAuth } from "@/context/AuthContext";
 
 interface PollsListProps {
   polls: Poll[];
@@ -29,8 +28,6 @@ export function PollsList({
   isLoading = false,
   showCreateButton = true 
 }: PollsListProps) {
-  const { session } = useAuth();
-  const isAuthenticated = !!session;
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [filterBy, setFilterBy] = useState<FilterOption>("all");
@@ -96,7 +93,7 @@ export function PollsList({
             Discover and participate in community polls
           </p>
         </div>
-        {showCreateButton && isAuthenticated && (
+        {showCreateButton && (
           <Link href="/polls/create">
             <Button>
               <Plus className="h-4 w-4 mr-2" />

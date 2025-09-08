@@ -1,61 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { Poll, User, AuthUser } from "@/types";
+import type { Poll } from "@/types";
 
-// Hook for managing authentication state
-export function useAuth() {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // TODO: Check for existing session/token
-    const checkAuth = async () => {
-      try {
-        // Simulate checking for stored authentication
-        const storedUser = localStorage.getItem("polly_user");
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
-        }
-      } catch (error) {
-        console.error("Auth check failed:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
-  const login = useCallback(async (email: string, password: string) => {
-    // TODO: Implement actual login API call
-    console.log("Login attempt:", { email, password });
-    
-    // Mock login
-    const mockUser: AuthUser = {
-      id: "user-123",
-      email,
-      username: email.split("@")[0],
-    };
-    
-    setUser(mockUser);
-    localStorage.setItem("polly_user", JSON.stringify(mockUser));
-    
-    return mockUser;
-  }, []);
-
-  const logout = useCallback(() => {
-    setUser(null);
-    localStorage.removeItem("polly_user");
-  }, []);
-
-  return {
-    user,
-    isLoading,
-    login,
-    logout,
-    isAuthenticated: !!user,
-  };
+interface CreatePollData {
+  title: string;
+  description: string;
+  options: string[];
+  allowMultipleChoices: boolean;
 }
 
 // Hook for managing polls
@@ -80,7 +32,7 @@ export function usePolls() {
     }
   }, []);
 
-  const createPoll = useCallback(async (pollData: any) => {
+  const createPoll = useCallback(async (pollData: CreatePollData) => {
     setIsLoading(true);
     setError(null);
     try {

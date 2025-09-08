@@ -43,12 +43,7 @@ export function LoginForm() {
     if (error) {
       setError(error.message);
     } else {
-      // Check for redirectTo parameter in URL
-      const params = new URLSearchParams(window.location.search);
-      const redirectTo = params.get('redirectTo');
-      
-      // Redirect to the specified path or dashboard
-      router.push(redirectTo || '/dashboard');
+      router.push('/dashboard');
     }
   };
 
