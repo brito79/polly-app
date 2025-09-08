@@ -14,13 +14,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, Home, PlusCircle, BarChart3, User, Settings, LogOut } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 
 export function Navbar() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const router = useRouter();
-  const { user, session } = useAuth();
+  const { user, session, signOut } = useAuth();
 
   const navigation = [
     { name: "Home", href: "/", icon: Home },
@@ -29,7 +28,7 @@ export function Navbar() {
   ];
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     router.push("/");
   };
 

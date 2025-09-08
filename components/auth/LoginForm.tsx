@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 
 export function LoginForm() {
@@ -14,6 +14,7 @@ export function LoginForm() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { signIn } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -22,7 +23,7 @@ export function LoginForm() {
     setIsLoading(true);
 
     // Basic validation
-    if (!email) {
+    if (!email.trim()) {
       setError("Email is required");
       setIsLoading(false);
       return;
@@ -33,17 +34,17 @@ export function LoginForm() {
       return;
     }
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { error } = await signIn(email.trim(), password);
 
     setIsLoading(false);
 
     if (error) {
-      setError(error.message);
+      setError(error);
     } else {
-      router.push('/dashboard');
+      // Check for redirect parameter
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirectTo = urlParams.get('redirectTo') || '/dashboard';
+      router.push(redirectTo);
     }
   };
 
