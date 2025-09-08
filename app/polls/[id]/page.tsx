@@ -1,14 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import { PollCard } from "@/components/polls/PollCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Share, Users, Clock } from "lucide-react";
+import { ArrowLeft, Share, Users, Clock, QrCode } from "lucide-react";
 import Link from "next/link";
 import type { Poll } from "@/types";
+import  QRCode  from "qrcode.react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+
 
 export default function PollDetailsPage() {
   const params = useParams();
@@ -112,6 +115,10 @@ export default function PollDetailsPage() {
       console.log("Poll URL copied to clipboard!");
     }
   };
+  
+  // QR code dialog state
+  const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  const pollUrl = typeof window !== 'undefined' ? window.location.href : '';
 
   if (isLoading) {
     return (
@@ -130,7 +137,7 @@ export default function PollDetailsPage() {
         <div className="text-center py-16">
           <h1 className="text-2xl font-bold mb-2">Poll Not Found</h1>
           <p className="text-muted-foreground mb-4">
-            The poll you're looking for doesn't exist or has been removed.
+            The poll you`&apos;`re looking for doesn`&apos;`t exist or has been removed.
           </p>
           <Link href="/polls">
             <Button>
@@ -155,10 +162,41 @@ export default function PollDetailsPage() {
             </Button>
           </Link>
           
-          <Button onClick={handleShare} variant="outline">
-            <Share className="mr-2 h-4 w-4" />
-            Share Poll
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleShare} variant="outline">
+              <Share className="mr-2 h-4 w-4" />
+              Share Poll
+            </Button>
+            <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <QrCode className="mr-2 h-4 w-4" />
+                  QR Code
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Share Poll via QR Code</DialogTitle>
+                </DialogHeader>
+                <div className="flex flex-col items-center justify-center p-4">
+                  <div className="bg-white p-4 rounded-lg">
+                    <QRCode value={pollUrl} size={200} />
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-4 text-center">
+                    Scan this QR code to access the poll directly
+                  </p>
+                  <Button 
+                    className="mt-4" 
+                    onClick={() => {
+                      navigator.clipboard.writeText(pollUrl);
+                    }}
+                  >
+                    Copy Link
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {/* Main Poll Card */}
