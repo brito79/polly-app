@@ -1,5 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+
+interface PollData {
+  id: string;
+  title: string;
+  description?: string;
+  creator_id: string;
+  is_active: boolean;
+  allow_multiple_choices: boolean;
+  expires_at?: string;
+  created_at: string;
+  updated_at: string;
+  options: PollOptionData[];
+  creator?: Record<string, unknown>;
+  votes?: Record<string, unknown>[];
+}
+
+interface PollOptionData {
+  id: string;
+  text: string;
+  order_index: number;
+}
+
+interface VoteData {
+  option_id: string;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,7 +53,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate options are not empty
-    const validOptions = options.filter((opt: string) => opt?.trim());
+    const validOptions = options.filter(opt => opt?.trim());
     if (validOptions.length !== options.length) {
       return NextResponse.json(
         { error: 'All options must have text' },
@@ -36,64 +61,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create Supabase client with cookie handling
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll();
-          },
-          setAll() {
-            // No need to set cookies in API routes
-          },
-        },
-      }
-    );
+    const supabase = await createSupabaseServerClient();
 
-    // Get the authenticated user (secure method)
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Get the authenticated user
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
     
-    if (authError) {
-      console.error('Auth error:', authError);
+    if (authError || !session) {
       return NextResponse.json(
-        { error: 'Authentication failed' },
+        { error: 'Authentication required' },
         { status: 401 }
       );
-    }
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'You must be logged in to create a poll' },
-        { status: 401 }
-      );
-    }
-
-    // Ensure user has a profile record
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      // Create profile if it doesn't exist
-      const { error: createProfileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: user.id,
-          email: user.email,
-          username: user.email?.split('@')[0] || 'user'
-        });
-
-      if (createProfileError) {
-        console.error('Profile creation error:', createProfileError);
-        return NextResponse.json(
-          { error: 'Failed to create user profile' },
-          { status: 500 }
-        );
-      }
     }
 
     // Create the poll
@@ -102,10 +79,9 @@ export async function POST(request: NextRequest) {
       .insert({
         title: title.trim(),
         description: description?.trim() || null,
-        creator_id: user.id,
+        creator_id: session.user.id,
         allow_multiple_choices: allow_multiple_choices || false,
         expires_at: expires_at || null,
-        is_active: true
       })
       .select()
       .single();
@@ -119,20 +95,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Create poll options
-    const optionsData = validOptions.map((text: string, index: number) => ({
+    const pollOptions = validOptions.map((option, index) => ({
       poll_id: poll.id,
-      text: text.trim(),
-      order_index: index
+      text: option.trim(),
+      order_index: index + 1,
     }));
 
     const { error: optionsError } = await supabase
       .from('poll_options')
-      .insert(optionsData);
+      .insert(pollOptions);
 
     if (optionsError) {
-      console.error('Options creation error:', optionsError);
-      // If options fail to create, we should delete the poll
+      console.error('Poll options creation error:', optionsError);
+      // Clean up the poll if options failed to create
       await supabase.from('polls').delete().eq('id', poll.id);
+      
       return NextResponse.json(
         { error: 'Failed to create poll options' },
         { status: 500 }
@@ -144,34 +121,27 @@ export async function POST(request: NextRequest) {
       .from('polls')
       .select(`
         *,
-        creator:profiles!polls_creator_id_fkey (username),
-        poll_options (
-          id,
-          text,
-          order_index
-        )
+        creator:profiles(*),
+        options:poll_options(*)
       `)
       .eq('id', poll.id)
       .single();
 
     if (fetchError) {
-      console.error('Fetch complete poll error:', fetchError);
+      console.error('Poll fetch error:', fetchError);
       return NextResponse.json(
         { error: 'Poll created but failed to fetch details' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(
-      { 
-        message: 'Poll created successfully',
-        poll: completePoll
-      },
-      { status: 201 }
-    );
+    return NextResponse.json({
+      message: 'Poll created successfully',
+      poll: completePoll,
+    });
 
   } catch (error) {
-    console.error('Unexpected error:', error);
+    console.error('API error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -181,92 +151,69 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    // Create Supabase client
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll();
-          },
-          setAll() {
-            // No need to set cookies in API routes
-          },
-        },
-      }
-    );
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const offset = (page - 1) * limit;
 
-    // Get polls with their options 
-    const { data: polls, error } = await supabase
+    const supabase = await createSupabaseServerClient();
+
+    // Get polls with their creators and options
+    const { data: polls, error, count } = await supabase
       .from('polls')
       .select(`
         *,
-        creator:profiles!polls_creator_id_fkey (username),
-        poll_options (
-          id,
-          text,
-          order_index
-        )
-      `)
+        creator:profiles(*),
+        options:poll_options(*),
+        votes(count)
+      `, { count: 'exact' })
       .eq('is_active', true)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error) {
-      console.error('Error fetching polls:', error);
+      console.error('Polls fetch error:', error);
       return NextResponse.json(
         { error: 'Failed to fetch polls' },
         { status: 500 }
       );
     }
 
-    // Transform the data to include vote counts
-    interface PollOption {
-      id: string;
-      text: string;
-      order_index: number;
-    }
-
-    interface Poll {
-      id: string;
-      title: string;
-      description: string;
-      created_at: string;
-      expires_at: string | null;
-      allow_multiple_choices: boolean;
-      creator_id: string;
-      creator: { username: string };
-      poll_options: PollOption[];
-    }
-
-    // Calculate vote counts for each poll
+    // Calculate vote counts for each option
     const pollsWithCounts = await Promise.all(
-      (polls as Poll[]).map(async (poll) => {
-        // Get vote counts for this poll
-        const { data: votes } = await supabase
+      polls?.map(async (poll: PollData) => {
+        const { data: voteCounts } = await supabase
           .from('votes')
           .select('option_id')
           .eq('poll_id', poll.id);
 
-        // Calculate vote count for each option
-        const optionsWithCounts = poll.poll_options?.map(option => ({
+        const optionsWithCounts = poll.options.map((option: { id: string; text: string; order_index: number }) => ({
           ...option,
-          vote_count: votes?.filter(vote => vote.option_id === option.id).length || 0
-        })).sort((a: PollOption, b: PollOption) => a.order_index - b.order_index) || [];
+          vote_count: voteCounts?.filter((v: VoteData) => v.option_id === option.id).length || 0,
+        }));
 
         return {
           ...poll,
-          total_votes: votes?.length || 0,
-          options: optionsWithCounts
+          options: optionsWithCounts,
+          total_votes: voteCounts?.length || 0,
         };
-      })
+      }) || []
     );
 
-    return NextResponse.json({ polls: pollsWithCounts });
+    return NextResponse.json({
+      polls: pollsWithCounts,
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        hasMore: (count || 0) > offset + limit,
+      },
+    });
+
   } catch (error) {
-    console.error('Unexpected error:', error);
+    console.error('API error:', error);
     return NextResponse.json(
-      { error: 'An unexpected error occurred' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

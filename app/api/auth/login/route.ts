@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,21 +12,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create Supabase client
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll();
-          },
-          setAll() {
-            // No need to set cookies in API routes
-          },
-        },
-      }
-    );
+    const supabase = await createSupabaseServerClient();
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -38,31 +24,6 @@ export async function POST(request: NextRequest) {
         { error: error.message },
         { status: 400 }
       );
-    }
-
-    // Ensure user has a profile record
-    if (data.user) {
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', data.user.id)
-        .single();
-
-      if (profileError || !profile) {
-        // Create profile if it doesn't exist
-        const { error: createProfileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: data.user.id,
-            email: data.user.email,
-            username: data.user.email?.split('@')[0] || 'user'
-          });
-
-        if (createProfileError) {
-          console.error('Profile creation error during login:', createProfileError);
-          // Don't fail the login if profile creation fails
-        }
-      }
     }
 
     return NextResponse.json({

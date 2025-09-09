@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { X, Plus, Calendar } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { createPoll } from "@/lib/actions/poll";
 
 interface CreatePollData {
   title: string;
@@ -94,28 +95,16 @@ export function CreatePollForm() {
     setErrors({});
 
     try {
-      const response = await fetch('/api/polls', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: pollData.title.trim(),
-          description: pollData.description?.trim() || null,
-          options: pollData.options.filter(opt => opt.trim()),
-          allow_multiple_choices: pollData.allow_multiple_choices,
-          expires_at: pollData.expires_at || null,
-        }),
+      const result = await createPoll({
+        title: pollData.title.trim(),
+        description: pollData.description?.trim() || undefined,
+        options: pollData.options.filter(opt => opt.trim()),
+        allow_multiple_choices: pollData.allow_multiple_choices,
+        expires_at: pollData.expires_at || undefined,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to create poll');
-      }
-
       // Redirect to the created poll
-      router.push(`/polls/${data.poll.id}`);
+      router.push(`/polls/${result.pollId}`);
     } catch (error) {
       console.error('Error creating poll:', error);
       setErrors({

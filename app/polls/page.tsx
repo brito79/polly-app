@@ -1,10 +1,12 @@
-import { Suspense } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PollList } from "@/components/polls/PollList";
 import { PlusCircle, BarChart3 } from "lucide-react";
+import { getAllPolls } from "@/lib/actions/poll";
 
-export default function PollsPage() {
+export default async function PollsPage() {
+  const pollsData = await getAllPolls(1, 20);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col space-y-8">
@@ -28,35 +30,8 @@ export default function PollsPage() {
         </div>
 
         {/* Polls List */}
-        <Suspense fallback={<PollListSkeleton />}>
-          <PollList />
-        </Suspense>
+        <PollList polls={pollsData.polls} />
       </div>
-    </div>
-  );
-}
-
-// Loading skeleton component
-function PollListSkeleton() {
-  return (
-    <div className="space-y-4">
-      {[...Array(3)].map((_, i) => (
-        <div key={i} className="border rounded-lg p-6 animate-pulse">
-          <div className="space-y-4">
-            <div className="h-6 bg-gray-200 rounded w-3/4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-            <div className="space-y-2">
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-            </div>
-            <div className="flex space-x-4">
-              <div className="h-4 bg-gray-200 rounded w-20"></div>
-              <div className="h-4 bg-gray-200 rounded w-24"></div>
-              <div className="h-4 bg-gray-200 rounded w-28"></div>
-            </div>
-          </div>
-        </div>
-      ))}
     </div>
   );
 }

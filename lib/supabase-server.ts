@@ -1,4 +1,4 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { Poll, PollOption } from '@/types/database';
 
@@ -22,15 +22,37 @@ interface PollResultRow {
   total_votes: number;
 }
 
-// Create a Supabase client for server-side operations
-export function createSupabaseServerClient() {
-  const cookieStore = cookies();
-  return createRouteHandlerClient({ cookies: () => cookieStore });
+// Create a Supabase client for server-side operations with modern SSR support
+export async function createSupabaseServerClient() {
+  const cookieStore = await cookies();
+  
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // The `setAll` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
+        },
+      },
+    }
+  );
 }
 
 // Utility function to get poll with results
 export async function getPollWithResults(pollId: string) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   
   const { data, error } = await supabase
     .rpc('get_poll_with_results', { poll_uuid: pollId });
@@ -88,7 +110,7 @@ export async function getPollWithResults(pollId: string) {
 
 // Utility function to check if user has voted
 export async function hasUserVoted(pollId: string, userId: string) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   
   const { data, error } = await supabase
     .rpc('user_has_voted', { poll_uuid: pollId, user_uuid: userId });
@@ -99,7 +121,7 @@ export async function hasUserVoted(pollId: string, userId: string) {
 
 // Utility function to get user's votes for a poll
 export async function getUserVotes(pollId: string, userId: string) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   
   const { data, error } = await supabase
     .rpc('get_user_votes', { poll_uuid: pollId, user_uuid: userId });

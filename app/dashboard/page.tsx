@@ -1,38 +1,30 @@
-"use client";
-
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
+import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlusCircle, BarChart3, Users, Vote, TrendingUp } from "lucide-react";
 import Link from "next/link";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getUserPolls, getUserStats } from "@/lib/actions/dashboard";
+import { UserPollsList } from "@/components/dashboard/UserPollsList";
 
-export default function DashboardPage() {
-  const { user, loading, session } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!loading && !session) {
-      router.push("/auth/login");
-    }
-  }, [loading, session, router]);
-
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center py-16">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">Loading dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
+export default async function DashboardPage() {
+  const supabase = await createSupabaseServerClient();
+  
+  // Get the current session
+  const { data: { session } } = await supabase.auth.getSession();
+  
   if (!session) {
-    return null;
+    redirect("/auth/login");
   }
+
+  // Fetch user data and stats in parallel
+  const [userPolls, stats] = await Promise.all([
+    getUserPolls(),
+    getUserStats(),
+  ]);
+
+  const user = session.user;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -67,9 +59,9 @@ export default function DashboardPage() {
               <BarChart3 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold">{stats.totalPolls}</div>
               <p className="text-xs text-muted-foreground">
-                0 active
+                {stats.activePolls} active
               </p>
             </CardContent>
           </Card>
@@ -80,7 +72,7 @@ export default function DashboardPage() {
               <Vote className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold">{stats.totalVotes}</div>
               <p className="text-xs text-muted-foreground">
                 Across all polls
               </p>
@@ -93,7 +85,7 @@ export default function DashboardPage() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold">{stats.activePolls}</div>
               <p className="text-xs text-muted-foreground">
                 Currently accepting votes
               </p>
@@ -107,7 +99,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                0
+                {stats.avgParticipation}
               </div>
               <p className="text-xs text-muted-foreground">
                 Votes per poll
@@ -132,19 +124,7 @@ export default function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8">
-              <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No polls yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Create your first poll to start gathering opinions
-              </p>
-              <Link href="/polls/create">
-                <Button>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Create Your First Poll
-                </Button>
-              </Link>
-            </div>
+            <UserPollsList polls={userPolls} />
           </CardContent>
         </Card>
 

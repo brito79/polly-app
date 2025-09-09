@@ -1,5 +1,5 @@
 ---
-applies_to: ["**/*"]
+applies_to: ["**"]
 ---
 
 # 📌 Project Overview: Polling App with QR Code Sharing
@@ -7,87 +7,105 @@ applies_to: ["**/*"]
 You are an **expert full-stack developer** working on the **Polling App** codebase.  
 Your primary goal is to **build a web application** that allows users to:
 
-1. Register an account.  
-2. Create polls.  
-3. Share them via **unique links** and **QR codes** so that others can vote.  
+1. **Register an account** and authenticate securely
+2. **Create polls** with multiple options and settings
+3. **Share polls** via unique links and QR codes for easy voting access
+4. **View real-time results** and poll analytics
 
-⚠️ **Important:** Adhere strictly to the rules, patterns, and conventions outlined in this document to ensure **code quality, consistency, and maintainability**.
+⚠️ **Important:** Follow all rules, patterns, and conventions in this document to ensure **code quality, consistency, and maintainability**.
 
 ---
 
 ## 🛠️ Technology Stack
 
-Use the following technologies **only**.  
-🚫 Do **not** introduce new libraries or frameworks unless explicitly instructed.
+**Required technologies only** - do not add external libraries without approval:
 
-- **Language:** TypeScript  
-- **Main Framework:** Next.js (App Router)  
-- **Database & Authentication:** Supabase  
-- **Styling:** Tailwind CSS + `shadcn/ui` components  
-- **State Management:**  
-  - Server Components for server state  
-  - `useState` or `useReducer` for local state in Client Components  
-- **API Communication:**  
-  - Use **Next.js Server Actions** for mutations (e.g., creating polls, voting)  
-  - Fetch data in **Server Components** using the Supabase client  
-- **Utility Libraries:**  
-  - Example: `qrcode.react` (for generating QR codes)  
+- **Language:** TypeScript
+- **Framework:** Next.js 14+ (App Router)
+- **Database & Auth:** Supabase
+- **Styling:** Tailwind CSS + shadcn/ui components
+- **State Management:** 
+  - Server Components for server state
+  - React hooks (`useState`, `useReducer`) for client state
+- **Data Flow:**
+  - Server Actions for mutations (create polls, voting)
+  - Direct Supabase queries in Server Components
+- **QR Codes:** `qrcode.react` or similar lightweight library
 
 ---
 
-## 🏗️ Architecture & Code Style
+## 🏗️ Architecture & Patterns
 
-### 📂 Directory Structure
-Follow the **standard Next.js App Router structure**:
+### 📂 Project Structure
+```
+/app                 # Next.js App Router pages
+/components/ui       # shadcn/ui components
+/components          # Custom reusable components
+/lib                 # Supabase client, utilities, Server Actions
+/types              # TypeScript type definitions
+```
 
-- `/app` → routes and pages  
-- `/components/ui` → `shadcn/ui` components  
-- `/components/` → custom reusable components  
-- `/lib` → Supabase client setup, utility functions, and Server Actions  
-
-### ⚛️ Component Design
-- **Prefer Server Components** for fetching and displaying data.  
-- Use **Client Components** (`'use client'`) **only** when interactivity is required (hooks, event listeners, etc.).  
+### ⚛️ Component Guidelines
+- **Default to Server Components** for data fetching and display
+- **Use Client Components** (`'use client'`) only for:
+  - Interactive forms and buttons
+  - State management with hooks
+  - Browser APIs (localStorage, etc.)
 
 ### 📛 Naming Conventions
-- **Components:** PascalCase → e.g., `CreatePollForm.tsx`  
-- **Utilities & Actions:** camelCase → e.g., `submitVote.ts`  
+- **Components:** `PascalCase` → `CreatePollForm.tsx`
+- **Functions/Actions:** `camelCase` → `createPoll.ts`
+- **Constants:** `UPPER_SNAKE_CASE` → `MAX_POLL_OPTIONS`
 
-### 🚨 Error Handling
-- Use **try/catch** blocks inside Server Actions and Route Handlers.  
-- Use **Next.js `error.tsx` files** for error handling inside route segments.  
-
-### 🔑 API Keys & Secrets
-- **Never** hardcode secrets.  
-- Store them in `.env.local`.  
-- Access them via:
-  - `process.env.NEXT_PUBLIC_SUPABASE_URL`  
-  - `process.env.SUPABASE_SECRET_KEY`  
+### 🛡️ Security & Environment
+- Store secrets in `.env.local`:
+  ```
+  NEXT_PUBLIC_SUPABASE_URL=your_url
+  SUPABASE_SERVICE_ROLE_KEY=your_key
+  ```
+- Never expose service keys to client-side code
 
 ---
 
-## 📋 Code Patterns to Follow
+## 🎯 Required Implementation Patterns
 
-✅ **Do This:**
-- Use forms that call **Server Actions** to handle data submission.  
-- Fetch data directly inside **Server Components**.  
+### ✅ Correct Approach
+```typescript
+// Server Component - fetch data directly
+export default async function PollsPage() {
+  const polls = await getPollsFromSupabase()
+  return <PollsList polls={polls} />
+}
 
-🚫 **Do Not Do This:**
-- Do **not** create a separate API route handler and then `fetch` it from the client.  
-- Do **not** fetch data inside Client Components using `useEffect` + `useState` if it can be done in a Server Component.  
+// Server Action - handle form submission
+export async function createPoll(formData: FormData) {
+  'use server'
+  // validation and database insert
+}
+```
+
+### ❌ Avoid These Patterns
+- Creating API routes then fetching them from client
+- Using `useEffect` + `fetch` in Client Components for initial data
+- Hardcoding environment variables
+- Bypassing Server Actions for data mutations
 
 ---
 
-## ✅ Verification Checklist
+## 📋 Development Checklist
 
-Before finalizing any code, confirm the following:
+Before submitting code, verify:
 
-1. Does the code use **Next.js App Router** and **Server Components** for data fetching?  
-2. Are **Server Actions** used for all data mutations (forms)?  
-3. Is the **Supabase client** used for all database interactions?  
-4. Are **`shadcn/ui` components** used for the UI where appropriate?  
-5. Are all **Supabase keys and secrets** loaded from **environment variables** (not hardcoded)?  
+- [ ] Uses Next.js App Router with Server Components
+- [ ] Server Actions handle all form submissions
+- [ ] Supabase client configured properly
+- [ ] shadcn/ui components used for UI
+- [ ] Environment variables properly configured
+- [ ] TypeScript types defined for all data structures
+- [ ] Error boundaries and loading states implemented
+- [ ] Responsive design with Tailwind CSS
 
 ---
 
-⚡ By following these granular instructions, you ensure your implementation of the **Polling App** is consistent, secure, and aligned with the project’s standards.
+🚀 **Goal:** Build a modern, secure, and scalable polling application following Next.js and React best practices.
+
