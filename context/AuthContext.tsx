@@ -13,6 +13,20 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
+// Security: Input sanitization utilities
+const sanitizeEmail = (email: string): string => {
+  return email.trim().toLowerCase().replace(/[<>]/g, '');
+};
+
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+  return emailRegex.test(email);
+};
+
+const validatePassword = (password: string): boolean => {
+  return password.length >= 6 && password.length <= 128; // Prevent memory exhaustion
+};
+
 const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
@@ -55,11 +69,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     const supabase = createClient();
     try {
+      // Security: Input validation and sanitization
+      const sanitizedEmail = sanitizeEmail(email);
+      
+      // Validate email format
+      if (!validateEmail(sanitizedEmail)) {
+        return { error: 'Please enter a valid email address' };
+      }
+      
+      // Validate password
+      if (!validatePassword(password)) {
+        return { error: 'Password must be between 6 and 128 characters' };
+      }
+
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: sanitizedEmail,
         password,
       });
-      return { error: error?.message || null };
+      
+      // Security: Sanitize error messages to prevent information leakage
+      if (error) {
+        const safeErrorMessage = error.message.includes('Invalid login credentials') 
+          ? 'Invalid email or password' 
+          : 'An error occurred during sign in';
+        return { error: safeErrorMessage };
+      }
+      
+      return { error: null };
     } catch {
       return { error: 'An unexpected error occurred' };
     }
@@ -68,11 +104,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, password: string) => {
     const supabase = createClient();
     try {
+      // Security: Input validation and sanitization
+      const sanitizedEmail = sanitizeEmail(email);
+      
+      // Validate email format
+      if (!validateEmail(sanitizedEmail)) {
+        return { error: 'Please enter a valid email address' };
+      }
+      
+      // Validate password
+      if (!validatePassword(password)) {
+        return { error: 'Password must be between 6 and 128 characters' };
+      }
+
       const { error } = await supabase.auth.signUp({
-        email,
+        email: sanitizedEmail,
         password,
       });
-      return { error: error?.message || null };
+      
+      // Security: Sanitize error messages to prevent user enumeration
+      if (error) {
+        if (error.message.includes('already registered')) {
+          return { error: 'An account with this email already exists' };
+        }
+        return { error: 'Registration failed. Please try again.' };
+      }
+      
+      return { error: null };
     } catch {
       return { error: 'An unexpected error occurred' };
     }

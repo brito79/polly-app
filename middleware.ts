@@ -2,10 +2,41 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
+// Security: Validate redirect URLs to prevent open redirect attacks
+const validateRedirectUrl = (url: string, origin: string): boolean => {
+  try {
+    const redirectUrl = new URL(url, origin);
+    // Only allow same-origin redirects
+    return redirectUrl.origin === origin;
+  } catch {
+    return false;
+  }
+};
+
+// Security: Sanitize redirect path to prevent injection
+const sanitizeRedirectPath = (path: string): string => {
+  // Remove potentially dangerous characters and normalize
+  return path.replace(/[<>]/g, '').replace(/\/+/g, '/');
+};
+
 // This middleware protects routes that require authentication
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
+  });
+
+  // Security: Add security headers to all responses
+  const securityHeaders = {
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'X-XSS-Protection': '1; mode=block',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+  };
+
+  // Apply security headers to response
+  Object.entries(securityHeaders).forEach(([key, value]) => {
+    supabaseResponse.headers.set(key, value);
   });
 
   const supabase = createServerClient(
@@ -54,8 +85,21 @@ export async function middleware(request: NextRequest) {
 
     const redirectUrl = new URL('/auth/login', request.url);
     const redirectTo = `${request.nextUrl.pathname}${request.nextUrl.search || ''}`;
-    redirectUrl.searchParams.set('redirectTo', redirectTo);
-    return NextResponse.redirect(redirectUrl);
+    
+    // Security: Validate and sanitize redirect parameter
+    const sanitizedRedirectTo = sanitizeRedirectPath(redirectTo);
+    if (validateRedirectUrl(sanitizedRedirectTo, request.nextUrl.origin)) {
+      redirectUrl.searchParams.set('redirectTo', sanitizedRedirectTo);
+    }
+    
+    const response = NextResponse.redirect(redirectUrl);
+    
+    // Apply security headers to redirect response
+    Object.entries(securityHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return response;
   }
   
   return supabaseResponse;

@@ -8,6 +8,49 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { createClient } from "@/lib/supabase";
 import { CheckCircle, Mail } from "lucide-react";
 
+// Security: Input sanitization utilities
+const sanitizeEmail = (email: string): string => {
+  return email.replace(/[<>]/g, '').trim().toLowerCase();
+};
+
+// Security: Email validation
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+  return emailRegex.test(email) && email.length <= 254;
+};
+
+// Security: Rate limiting for magic link requests
+const magicLinkRateLimiter = {
+  attempts: new Map<string, { count: number; timestamp: number }>(),
+  maxAttempts: 3,
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  
+  isRateLimited(email: string): boolean {
+    const now = Date.now();
+    const record = this.attempts.get(email);
+    
+    if (!record) return false;
+    
+    if (now - record.timestamp > this.windowMs) {
+      this.attempts.delete(email);
+      return false;
+    }
+    
+    return record.count >= this.maxAttempts;
+  },
+  
+  recordAttempt(email: string): void {
+    const now = Date.now();
+    const record = this.attempts.get(email);
+    
+    if (!record || now - record.timestamp > this.windowMs) {
+      this.attempts.set(email, { count: 1, timestamp: now });
+    } else {
+      record.count++;
+    }
+  }
+};
+
 export function MagicLinkForm() {
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -19,29 +62,61 @@ export function MagicLinkForm() {
     setError(null);
     setIsLoading(true);
 
-    // Basic validation
-    if (!email.trim()) {
-      setError("Email is required");
-      setIsLoading(false);
-      return;
-    }
-
-    const supabase = createClient();
-
     try {
+      // Security: Sanitize and validate email
+      const sanitizedEmail = sanitizeEmail(email);
+      
+      if (!sanitizedEmail) {
+        setError("Email is required");
+        setIsLoading(false);
+        return;
+      }
+
+      if (!validateEmail(sanitizedEmail)) {
+        setError("Please enter a valid email address");
+        setIsLoading(false);
+        return;
+      }
+
+      // Security: Rate limiting check
+      if (magicLinkRateLimiter.isRateLimited(sanitizedEmail)) {
+        setError("Too many magic link requests. Please try again later.");
+        setIsLoading(false);
+        return;
+      }
+
+      const supabase = createClient();
+
+      // Security: Validate callback URL to prevent open redirect
+      const callbackUrl = `${window.location.origin}/auth/callback`;
+      const callbackUrlObj = new URL(callbackUrl);
+      if (callbackUrlObj.origin !== window.location.origin) {
+        throw new Error('Invalid callback URL');
+      }
+
       const { error } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
+        email: sanitizedEmail,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: callbackUrl,
         },
       });
 
       if (error) {
-        setError(error.message);
+        // Security: Record failed attempt for rate limiting
+        magicLinkRateLimiter.recordAttempt(sanitizedEmail);
+        
+        // Security: Sanitize error message
+        const safeErrorMessage = error.message.includes('rate')
+          ? 'Please wait before requesting another magic link'
+          : 'Failed to send magic link. Please try again.';
+        setError(safeErrorMessage);
       } else {
+        // Update email state with sanitized value
+        setEmail(sanitizedEmail);
         setEmailSent(true);
       }
-    } catch {
+    } catch (error) {
+      console.error('Magic link error:', error);
       setError('An unexpected error occurred');
     } finally {
       setIsLoading(false);
@@ -99,7 +174,9 @@ export function MagicLinkForm() {
               type="email"
               placeholder="Enter your email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => setEmail(sanitizeEmail(e.target.value))}
+              maxLength={254} // Security: Prevent buffer overflow
+              autoComplete="email"
               required
             />
           </div>

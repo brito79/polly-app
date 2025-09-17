@@ -9,6 +9,55 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 
+// Security: Input sanitization utilities
+const sanitizeInput = (input: string): string => {
+  return input.replace(/[<>]/g, '').trim();
+};
+
+// Security: Validate redirect URL to prevent open redirect attacks
+const validateRedirectUrl = (url: string): boolean => {
+  try {
+    const urlObj = new URL(url, window.location.origin);
+    // Only allow same-origin redirects
+    return urlObj.origin === window.location.origin;
+  } catch {
+    return false;
+  }
+};
+
+// Security: Rate limiting for login attempts
+const rateLimiter = {
+  attempts: new Map<string, { count: number; timestamp: number }>(),
+  maxAttempts: 5,
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  
+  isRateLimited(identifier: string): boolean {
+    const now = Date.now();
+    const record = this.attempts.get(identifier);
+    
+    if (!record) return false;
+    
+    // Reset if window expired
+    if (now - record.timestamp > this.windowMs) {
+      this.attempts.delete(identifier);
+      return false;
+    }
+    
+    return record.count >= this.maxAttempts;
+  },
+  
+  recordAttempt(identifier: string): void {
+    const now = Date.now();
+    const record = this.attempts.get(identifier);
+    
+    if (!record || now - record.timestamp > this.windowMs) {
+      this.attempts.set(identifier, { count: 1, timestamp: now });
+    } else {
+      record.count++;
+    }
+  }
+};
+
 export function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,29 +71,65 @@ export function LoginForm() {
     setError(null);
     setIsLoading(true);
 
-    // Basic validation
-    if (!email.trim()) {
-      setError("Email is required");
-      setIsLoading(false);
-      return;
-    }
-    if (!password) {
-      setError("Password is required");
-      setIsLoading(false);
-      return;
-    }
+    try {
+      // Security: Sanitize inputs
+      const sanitizedEmail = sanitizeInput(email);
+      const sanitizedPassword = sanitizeInput(password);
 
-    const { error } = await signIn(email.trim(), password);
+      // Security: Rate limiting check
+      const clientIdentifier = 'login-attempt'; // In production, use IP or user identifier
+      if (rateLimiter.isRateLimited(clientIdentifier)) {
+        setError("Too many login attempts. Please try again later.");
+        setIsLoading(false);
+        return;
+      }
 
-    setIsLoading(false);
+      // Basic validation
+      if (!sanitizedEmail.trim()) {
+        setError("Email is required");
+        setIsLoading(false);
+        return;
+      }
+      if (!sanitizedPassword) {
+        setError("Password is required");
+        setIsLoading(false);
+        return;
+      }
 
-    if (error) {
-      setError(error);
-    } else {
-      // Check for redirect parameter
+      // Additional email format validation
+      const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+      if (!emailRegex.test(sanitizedEmail)) {
+        setError("Please enter a valid email address");
+        setIsLoading(false);
+        return;
+      }
+
+      const { error } = await signIn(sanitizedEmail, sanitizedPassword);
+
+      if (error) {
+        // Security: Record failed attempt for rate limiting
+        rateLimiter.recordAttempt(clientIdentifier);
+        setError(error);
+        setIsLoading(false);
+        return;
+      }
+
+      // Success - handle redirect securely
       const urlParams = new URLSearchParams(window.location.search);
       const redirectTo = urlParams.get('redirectTo') || '/dashboard';
-      router.push(redirectTo);
+      
+      // Security: Validate redirect URL to prevent open redirect attacks
+      if (validateRedirectUrl(redirectTo)) {
+        router.push(redirectTo);
+      } else {
+        // If redirect URL is invalid, go to default safe location
+        router.push('/dashboard');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -71,7 +156,9 @@ export function LoginForm() {
               type="email"
               placeholder="Enter your email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => setEmail(sanitizeInput(e.target.value))}
+              maxLength={254} // Security: Prevent buffer overflow
+              autoComplete="email"
               required
             />
           </div>
@@ -83,7 +170,9 @@ export function LoginForm() {
               type="password"
               placeholder="Enter your password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => setPassword(sanitizeInput(e.target.value))}
+              maxLength={128} // Security: Prevent buffer overflow
+              autoComplete="current-password"
               required
             />
           </div>

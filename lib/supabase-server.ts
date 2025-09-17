@@ -2,6 +2,30 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { Poll, PollOption } from '@/types/database';
 
+// Security: Validate server environment variables
+const validateServerEnvironmentVariables = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Missing required Supabase environment variables');
+  }
+
+  // Security: Validate URL format
+  try {
+    new URL(supabaseUrl);
+  } catch {
+    throw new Error('Invalid Supabase URL format');
+  }
+
+  // Security: Basic validation of anon key format
+  if (supabaseAnonKey.length < 50) {
+    throw new Error('Invalid Supabase anon key format');
+  }
+
+  return { supabaseUrl, supabaseAnonKey };
+};
+
 // Type for the database function result
 interface PollResultRow {
   poll_id: string;
@@ -24,11 +48,12 @@ interface PollResultRow {
 
 // Create a Supabase client for server-side operations with modern SSR support
 export async function createSupabaseServerClient() {
+  const { supabaseUrl, supabaseAnonKey } = validateServerEnvironmentVariables();
   const cookieStore = await cookies();
   
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         getAll() {
@@ -36,15 +61,35 @@ export async function createSupabaseServerClient() {
         },
         setAll(cookiesToSet) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              // Security: Validate cookie options
+              const secureOptions = {
+                ...options,
+                secure: process.env.NODE_ENV === 'production', // Ensure secure in production
+                sameSite: 'lax' as const, // CSRF protection
+                httpOnly: options?.httpOnly ?? true, // XSS protection for auth cookies
+              };
+              cookieStore.set(name, value, secureOptions);
+            });
+          } catch (error) {
             // The `setAll` method was called from a Server Component.
             // This can be ignored if you have middleware refreshing
             // user sessions.
+            console.warn('Cookie setting failed in Server Component:', error);
           }
         },
+      },
+      // Security: Global configuration for server client
+      global: {
+        headers: {
+          'x-application-name': 'polly-app-server',
+        },
+      },
+      // Security: Auth configuration
+      auth: {
+        flowType: 'pkce', // Use PKCE for enhanced security
+        autoRefreshToken: false, // Server components don't need auto-refresh
+        persistSession: true,
       },
     }
   );
