@@ -2,10 +2,10 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PollList } from "@/components/polls/PollList";
 import { PlusCircle, BarChart3 } from "lucide-react";
-import { getAllPolls } from "@/lib/actions/poll";
+import { getAllPollsPublic } from "@/lib/actions/poll";
 
 export default async function PollsPage() {
-  const pollsData = await getAllPolls(1, 20);
+  const pollsData = await getAllPollsPublic(1, 20);
 
   return (
     <div className="min-h-screen bg-gray-50/50">

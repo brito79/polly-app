@@ -227,6 +227,97 @@ export async function checkIfUserCanVote(pollId: string) {
   }
 }
 
+export async function getAllPollsPublic(page: number = 1, limit: number = 10) {
+  try {
+    const { createClient } = await import('@supabase/supabase-js');
+    
+    // Create a public client without cookies for static rendering
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    
+    const offset = (page - 1) * limit;
+
+    // Get polls with creator information and basic stats
+    const { data: pollsData, error: pollsError, count } = await supabase
+      .from('polls')
+      .select(`
+        *,
+        creator:profiles(*),
+        poll_options(count),
+        votes(count)
+      `, { count: 'exact' })
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (pollsError) {
+      throw new Error('Failed to fetch polls');
+    }
+
+    // Transform the data to include vote counts
+    const transformedPolls: Poll[] = await Promise.all(
+      pollsData?.map(async (pollData) => {
+        // Get options with vote counts for this poll
+        const { data: optionsData } = await supabase
+          .from('poll_options')
+          .select(`
+            *,
+            votes(count)
+          `)
+          .eq('poll_id', pollData.id)
+          .order('order_index');
+
+        const optionsWithCounts: PollOption[] = optionsData?.map(option => ({
+          id: option.id,
+          poll_id: option.poll_id,
+          text: option.text,
+          order_index: option.order_index,
+          created_at: option.created_at,
+          vote_count: option.votes?.[0]?.count || 0,
+        })) || [];
+
+        // Calculate total votes for this poll
+        const totalVotes = optionsWithCounts.reduce((sum, option) => sum + (option.vote_count || 0), 0);
+
+        return {
+          id: pollData.id,
+          title: pollData.title,
+          description: pollData.description,
+          creator_id: pollData.creator_id,
+          creator: pollData.creator,
+          is_active: pollData.is_active,
+          allow_multiple_choices: pollData.allow_multiple_choices,
+          expires_at: pollData.expires_at,
+          created_at: pollData.created_at,
+          updated_at: pollData.updated_at,
+          options: optionsWithCounts,
+          total_votes: totalVotes,
+        };
+      }) || []
+    );
+
+    return {
+      polls: transformedPolls,
+      total: count || 0,
+      page,
+      limit,
+      hasMore: (count || 0) > offset + limit,
+    };
+  } catch (error) {
+    console.error('Error fetching polls:', error);
+    return {
+      polls: [],
+      total: 0,
+      page,
+      limit,
+      hasMore: false,
+    };
+  }
+}
+
+// Authenticated version of getAllPolls for dashboard and user-specific data
 export async function getAllPolls(page: number = 1, limit: number = 10) {
   try {
     const supabase = await createSupabaseServerClient();
