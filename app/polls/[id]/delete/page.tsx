@@ -13,7 +13,7 @@ import { AlertTriangle, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 interface PageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 /**
@@ -27,7 +27,7 @@ interface PageProps {
  * - Secure deletion flow
  */
 export default async function DeletePollPage({ params }: PageProps) {
-  const pollId = params.id;
+  const { id: pollId } = await params;
 
   // Security: Validate UUID format
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
