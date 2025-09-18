@@ -66,12 +66,18 @@ export function copyToClipboard(text: string): Promise<void> {
     textArea.select();
     
     return new Promise<void>((resolve, reject) => {
-      if (document.execCommand('copy')) {
-        resolve();
-      } else {
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          resolve();
+        } else {
+          reject(new Error('Failed to copy to clipboard'));
+        }
+      } catch (err) {
         reject(new Error('Failed to copy to clipboard'));
+      } finally {
+        textArea.remove();
       }
-      textArea.remove();
     });
   }
 }
@@ -140,7 +146,14 @@ export function generateCsrfToken(): string {
     return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
   }
   
-  // Fallback for environments without crypto API (less secure)
+  // Server-side fallback using Node.js crypto
+  if (typeof require !== 'undefined') {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const crypto = require('crypto');
+    return crypto.randomBytes(32).toString('hex');
+  }
+  
+  // Last resort fallback for environments without crypto
   return Math.random().toString(36).substring(2, 15) + 
          Math.random().toString(36).substring(2, 15);
 }
@@ -161,6 +174,16 @@ const rateLimits: Record<string, {attempts: number, resetTime: number}> = {};
 export function checkRateLimit(key: string, limit = 5, windowMs = 60000): boolean {
   const now = Date.now();
   
+  // Clean up expired entries (limit to prevent DoS)
+  const keys = Object.keys(rateLimits);
+  if (keys.length > 1000) {
+    keys.forEach(k => {
+      if (now > rateLimits[k].resetTime) {
+        delete rateLimits[k];
+      }
+    });
+  }
+  
   // Initialize or reset expired entry
   if (!rateLimits[key] || now > rateLimits[key].resetTime) {
     rateLimits[key] = {
@@ -170,8 +193,11 @@ export function checkRateLimit(key: string, limit = 5, windowMs = 60000): boolea
     return true;
   }
   
-  // Increment attempts and check against limit
-  rateLimits[key].attempts++;
+  // Check against limit before incrementing
+  if (rateLimits[key].attempts >= limit) {
+    return false;
+  }
   
-  return rateLimits[key].attempts <= limit;
+  rateLimits[key].attempts++;
+  return true;
 }

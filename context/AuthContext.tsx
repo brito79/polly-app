@@ -219,15 +219,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           // Validate session integrity before setting state
           if (session?.user?.id && session?.access_token) {
-            setSession(session);
-            setUser(session.user);
+            // Check if token is expired
+            const expiresAt = session.expires_at;
+            if (expiresAt && new Date(expiresAt * 1000) < new Date()) {
+              // Token expired, clear session
+              setSession(null);
+              setUser(null);
+            } else {
+              setSession(session);
+              setUser(session.user);
+            }
           } else {
             // Invalid session structure
             setSession(null);
             setUser(null);
           }
-        }
-      } catch (error) {
+        }      } catch (error) {
         console.error('[AUTH] Critical session error:', error);
         // Fail safely by clearing all auth state
         setSession(null);
