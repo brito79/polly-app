@@ -55,27 +55,29 @@ export function EmailSettingsForm({ initialSettings }: { initialSettings?: Email
   const addDomain = () => {
     if (!newDomain) return;
     
+    // Normalize domain to lowercase
+    const normalizedDomain = newDomain.toLowerCase().trim();
+    
     // Check if domain already exists
-    if (settings.allowed_domains.includes(newDomain)) {
-      toast.error(`"${newDomain}" is already in the allowed domains list.`);
+    if (settings.allowed_domains.includes(normalizedDomain)) {
+      toast.error(`"${normalizedDomain}" is already in the allowed domains list.`);
       return;
     }
     
     // Basic validation (simple check for valid domain format)
     const domainPattern = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/;
-    if (!domainPattern.test(newDomain)) {
+    if (!domainPattern.test(normalizedDomain)) {
       toast.error('Please enter a valid domain (e.g. example.com)');
       return;
     }
     
     setSettings({
       ...settings,
-      allowed_domains: [...settings.allowed_domains, newDomain],
+      allowed_domains: [...settings.allowed_domains, normalizedDomain],
     });
     
     setNewDomain('');
-  };
-  
+  };  
   const removeDomain = (domain: string) => {
     setSettings({
       ...settings,

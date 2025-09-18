@@ -17,32 +17,13 @@ export async function updateAppSettings(key: string, value: Record<string, unkno
     
     const supabase = await createSupabaseServerClient();
     
-    // Check if the setting already exists
-    const { data: existingSetting } = await supabase
+    // Upsert the setting
+    const { error } = await supabase
       .from('app_settings')
-      .select('id')
-      .eq('key', key)
-      .maybeSingle();
+      .upsert({ key, value }, { onConflict: 'key' });
     
-    if (existingSetting) {
-      // Update existing setting
-      const { error } = await supabase
-        .from('app_settings')
-        .update({ value })
-        .eq('id', existingSetting.id);
-      
-      if (error) {
-        throw new Error(`Failed to update setting: ${error.message}`);
-      }
-    } else {
-      // Insert new setting
-      const { error } = await supabase
-        .from('app_settings')
-        .insert({ key, value });
-      
-      if (error) {
-        throw new Error(`Failed to create setting: ${error.message}`);
-      }
+    if (error) {
+      throw new Error(`Failed to update setting: ${error.message}`);
     }
     
     // Revalidate admin settings page
@@ -58,7 +39,6 @@ export async function updateAppSettings(key: string, value: Record<string, unkno
     }
   }
 }
-
 /**
  * Retrieves all application settings
  */

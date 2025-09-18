@@ -222,10 +222,15 @@ export default async function AdminPollsPage() {
                             <Eye className="h-4 w-4" />
                           </Button>
                         </Link>
-                        <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          disabled
+                          className="text-red-600 hover:text-red-700 disabled:opacity-50"
+                          title="Delete functionality coming soon"
+                        >
                           <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                        </Button>                      </div>
                     </TableCell>
                   </TableRow>
                 ))

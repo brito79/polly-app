@@ -66,14 +66,12 @@ import { createPoll } from "@/lib/actions/poll";
  * @param input - Raw user input string
  * @returns Sanitized string safe for processing
  */
+import { sanitizeInput as baseSanitizeInput } from '@/lib/utils';
+
 const sanitizeInput = (input: string): string => {
   if (!input) return '';
-  
-  return input
-    .replace(/[<>]/g, '') // Remove potential HTML tags
-    .substring(0, 500); // Limit length to prevent abuse
+  return baseSanitizeInput(input).substring(0, 500);
 };
-
 /**
  * Validates poll title with security checks
  * @param title - Poll title to validate

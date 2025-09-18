@@ -77,18 +77,22 @@ $$;
 -- Function to update app settings (with admin check)
 CREATE OR REPLACE FUNCTION public.update_app_setting(setting_key TEXT, setting_value JSONB)
 RETURNS VOID
-LANGUAGE SQL
+LANGUAGE plpgsql
 SECURITY DEFINER
-AS $$
+AS $
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'Access denied: Admin privileges required';
+  END IF;
+  
   INSERT INTO public.app_settings (key, value, updated_at) 
   VALUES (setting_key, setting_value, NOW())
   ON CONFLICT (key) 
   DO UPDATE SET 
     value = setting_value,
-    updated_at = NOW()
-  WHERE public.is_admin();
-$$;
-
+    updated_at = NOW();
+END;
+$;
 -- Function to get app setting
 CREATE OR REPLACE FUNCTION public.get_app_setting(setting_key TEXT)
 RETURNS JSONB

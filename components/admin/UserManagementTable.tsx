@@ -141,21 +141,20 @@ export function UserManagementTable({ users }: UserManagementTableProps) {
                     )}
                     <DropdownMenuItem>
                       <Mail className="h-4 w-4 mr-2" />
-                      Email User
+                      Email User (Coming Soon)
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-red-600">
+                    <DropdownMenuItem className="text-red-600" disabled>
                       <Trash2 className="h-4 w-4 mr-2" />
-                      Delete Account
+                      Delete Account (Coming Soon)
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-red-600">
+                    <DropdownMenuItem className="text-red-600" disabled>
                       <Ban className="h-4 w-4 mr-2" />
-                      Suspend Account
+                      Suspend Account (Coming Soon)
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-green-600">
+                    <DropdownMenuItem className="text-green-600" disabled>
                       <CheckCircle className="h-4 w-4 mr-2" />
-                      Verify Account
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
+                      Verify Account (Coming Soon)
+                    </DropdownMenuItem>                  </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>
             </TableRow>
