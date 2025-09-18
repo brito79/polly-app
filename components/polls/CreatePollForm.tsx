@@ -67,8 +67,9 @@ import { createPoll } from "@/lib/actions/poll";
  * @returns Sanitized string safe for processing
  */
 const sanitizeInput = (input: string): string => {
+  if (!input) return '';
+  
   return input
-    .trim()
     .replace(/[<>]/g, '') // Remove potential HTML tags
     .substring(0, 500); // Limit length to prevent abuse
 };
@@ -80,8 +81,8 @@ const sanitizeInput = (input: string): string => {
  */
 const validateTitle = (title: string): { isValid: boolean; error?: string } => {
   const sanitized = sanitizeInput(title);
-  if (!sanitized) return { isValid: false, error: "Title is required" };
-  if (sanitized.length < 3) return { isValid: false, error: "Title must be at least 3 characters" };
+  if (!sanitized || !sanitized.trim()) return { isValid: false, error: "Title is required" };
+  if (sanitized.trim().length < 3) return { isValid: false, error: "Title must be at least 3 characters" };
   if (sanitized.length > 200) return { isValid: false, error: "Title must be less than 200 characters" };
   return { isValid: true };
 };
@@ -263,10 +264,10 @@ export function CreatePollForm() {
     try {
       // 🛡️ DATA SANITIZATION: Clean all inputs before submission
       const sanitizedData = {
-        title: sanitizeInput(pollData.title),
-        description: pollData.description?.trim() ? sanitizeInput(pollData.description) : undefined,
+        title: sanitizeInput(pollData.title).trim(),
+        description: pollData.description ? sanitizeInput(pollData.description).trim() : undefined,
         options: pollData.options
-          .map(opt => sanitizeInput(opt))
+          .map(opt => sanitizeInput(opt).trim())
           .filter(opt => opt.length > 0), // Remove empty options
         allow_multiple_choices: pollData.allow_multiple_choices,
         expires_at: pollData.expires_at || undefined,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -145,8 +145,24 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false); // Loading state for UX
   
   // 🔗 EXTERNAL DEPENDENCIES
-  const { signIn } = useAuth(); // Authentication context for secure login
+  const { signIn, user, userRole, loading } = useAuth(); // Authentication context for secure login
   const router = useRouter(); // Next.js router for post-login navigation
+  
+  // 🚀 AUTO-REDIRECT FOR AUTHENTICATED USERS
+  // If user is already logged in, redirect them based on their role
+  useEffect(() => {
+    console.log('[LOGIN] useEffect triggered:', { loading, user: !!user, userRole });
+    if (!loading && user && userRole) {
+      console.log('[LOGIN] Redirecting user with role:', userRole);
+      if (userRole === 'admin') {
+        console.log('[LOGIN] Redirecting to admin dashboard');
+        router.push('/admin/dashboard');
+      } else {
+        console.log('[LOGIN] Redirecting to user dashboard');
+        router.push('/dashboard');
+      }
+    }
+  }, [user, userRole, loading, router]);
   
   // 🔒 SECURITY UTILITIES
   // Using centralized form security hook for comprehensive protection
@@ -225,19 +241,9 @@ export function LoginForm() {
         return;
       }
 
-      // ✅ SUCCESS: Handle secure redirect after authentication
-      const urlParams = new URLSearchParams(window.location.search);
-      const redirectTo = urlParams.get('redirectTo') || '/dashboard';
-      
-      // 🔒 SECURITY: Validate redirect URL to prevent open redirect attacks
-      // Use the built-in isValidRedirect from useFormSecurity
-      if (redirectTo.startsWith('/') && !redirectTo.includes('//')) {
-        router.push(redirectTo); // Safe redirect to requested page
-      } else {
-        // If redirect URL is invalid, go to default safe location
-        console.warn('[SECURITY] Invalid redirect attempted, using default');
-        router.push('/dashboard');
-      }
+      // ✅ SUCCESS: Authentication successful - redirect will be handled by useEffect
+      // The AuthContext will update the user and userRole state, triggering the redirect
+      // No need to manually redirect here as the useEffect will handle it automatically
       
     } catch (error) {
       // 🚨 ERROR HANDLING: Log for debugging but don't expose details

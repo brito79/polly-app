@@ -5,6 +5,19 @@ import { createClient } from '@/lib/supabase';
 import type { User, Session, AuthError } from '@supabase/supabase-js';
 
 /**
+ * User profile type definition
+ */
+interface UserProfile {
+  id: string;
+  username: string;
+  full_name: string;
+  avatar_url?: string;
+  role: 'admin' | 'user';
+  created_at: string;
+  updated_at: string;
+}
+
+/**
  * 🔐 Authentication Context - Enterprise Security Implementation
  * 
  * PURPOSE:
@@ -35,6 +48,10 @@ interface AuthContextType {
   user: User | null;
   /** Current authentication session (null if not authenticated) */
   session: Session | null;
+  /** User role (admin/user) */
+  userRole: string | null;
+  /** User profile data */
+  profile: UserProfile | null;
   /** Loading state for authentication operations */
   loading: boolean;
   /** 
@@ -166,6 +183,8 @@ const rateLimiter = {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
+  userRole: null,
+  profile: null,
   loading: true,
   signIn: async () => ({ error: null }),
   signUp: async () => ({ error: null }),
@@ -194,7 +213,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Core authentication state
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+
+  /**
+   * Fetches user profile data including role
+   */
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      console.log('[AUTH] Fetching profile for user ID:', userId);
+      const supabase = createClient();
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.warn('[AUTH] Profile fetch error:', error.message);
+        return;
+      }
+      
+      console.log('[AUTH] Profile data fetched:', profileData);
+      setProfile(profileData);
+      setUserRole(profileData?.role || 'user');
+      console.log('[AUTH] User role set to:', profileData?.role || 'user');
+    } catch (error) {
+      console.error('[AUTH] Profile fetch critical error:', error);
+    }
+  };
 
   /**
    * 🛡️ SECURE SESSION INITIALIZATION
@@ -216,6 +264,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Clear potentially corrupted session state
           setSession(null);
           setUser(null);
+          setUserRole(null);
+          setProfile(null);
         } else {
           // Validate session integrity before setting state
           if (session?.user?.id && session?.access_token) {
@@ -225,20 +275,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               // Token expired, clear session
               setSession(null);
               setUser(null);
+              setUserRole(null);
+              setProfile(null);
             } else {
               setSession(session);
               setUser(session.user);
+              // Fetch user profile data including role
+              await fetchUserProfile(session.user.id);
             }
           } else {
             // Invalid session structure
             setSession(null);
             setUser(null);
+            setUserRole(null);
+            setProfile(null);
           }
         }      } catch (error) {
         console.error('[AUTH] Critical session error:', error);
         // Fail safely by clearing all auth state
         setSession(null);
         setUser(null);
+        setUserRole(null);
+        setProfile(null);
       } finally {
         setLoading(false);
       }
@@ -261,9 +319,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (session?.user?.id && session?.access_token) {
           setSession(session);
           setUser(session.user);
+          // Fetch user profile data including role
+          await fetchUserProfile(session.user.id);
         } else {
           setSession(null);
           setUser(null);
+          setUserRole(null);
+          setProfile(null);
         }
         
         setLoading(false);
@@ -272,6 +334,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Fail safely
         setSession(null);
         setUser(null);
+        setUserRole(null);
+        setProfile(null);
         setLoading(false);
       }
     });
@@ -429,6 +493,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider value={{ 
       user, 
       session, 
+      userRole,
+      profile,
       loading, 
       signIn, 
       signUp, 

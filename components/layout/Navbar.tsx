@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Home, PlusCircle, BarChart3, User, Settings, LogOut } from "lucide-react";
+import { Menu, Home, PlusCircle, BarChart3, User, Settings, LogOut, Shield } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 /**
@@ -69,7 +69,7 @@ export function Navbar() {
   // 🧭 NAVIGATION: Next.js router for programmatic navigation
   const router = useRouter();
   // 👤 AUTHENTICATION: Current user and session state
-  const { user, session, signOut } = useAuth();
+  const { user, session, userRole, signOut } = useAuth();
 
   /**
    * 🗺️ NAVIGATION CONFIGURATION
@@ -137,6 +137,15 @@ export function Navbar() {
 
           {/* 👤 USER MENU / AUTHENTICATION SECTION: Context-aware user interface */}
           <div className="flex items-center space-x-4">
+            {/* 🛡️ ADMIN QUICK ACCESS: Standalone admin button for better visibility */}
+            {session && userRole === 'admin' && (
+              <Link href="/admin/dashboard">
+                <Button variant="outline" size="sm" className="hidden md:flex items-center space-x-2">
+                  <Shield className="h-4 w-4" />
+                  <span>Admin</span>
+                </Button>
+              </Link>
+            )}
             {session ? (
               /* 🔐 AUTHENTICATED USER MENU: Dropdown with user actions */
               <DropdownMenu>
@@ -179,6 +188,15 @@ export function Navbar() {
                       Dashboard
                     </Link>
                   </DropdownMenuItem>
+                  {/* 🛡️ ADMIN PANEL: Only visible to admin users */}
+                  {userRole === 'admin' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/dashboard" className="flex items-center">
+                        <Shield className="mr-2 h-4 w-4" aria-hidden="true" />
+                        Admin Panel
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   {/* ⚙️ SETTINGS LINK: User account settings */}
                   <DropdownMenuItem asChild>
                     <Link href="/settings" className="flex items-center">
@@ -275,6 +293,15 @@ export function Navbar() {
                             Dashboard
                           </Button>
                         </Link>
+                        {/* 🛡️ ADMIN PANEL: Only visible to admin users */}
+                        {userRole === 'admin' && (
+                          <Link href="/admin/dashboard" onClick={() => setIsSheetOpen(false)}>
+                            <Button variant="ghost" className="w-full justify-start">
+                              <Shield className="mr-2 h-4 w-4" />
+                              Admin Panel
+                            </Button>
+                          </Link>
+                        )}
                         <Link href="/settings" onClick={() => setIsSheetOpen(false)}>
                           <Button variant="ghost" className="w-full justify-start">
                             <Settings className="mr-2 h-4 w-4" />
