@@ -14,15 +14,12 @@ import { DashboardStats } from '@/components/admin/DashboardStats';
 import { RecentActivityServer } from '@/components/admin/RecentActivityServer';
 import { ActivitySkeleton } from '@/components/admin/ActivitySkeleton';
 import { Profile } from '@/types/database';
+import { getStatsSummary } from '@/lib/actions/stats/index';
+import { ScrollToHash } from '@/components/ScrollToHash';
 
 export const dynamic = 'force-dynamic';
 
 // Types for dashboard components
-interface DashboardStat {
-  title: string;
-  value: number;
-  change: string;
-}
 
 interface PollWithProfile {
   id: string;
@@ -45,23 +42,11 @@ export default async function AdminDashboardPage() {
   // This will redirect if not admin
   await requireAdmin();
   
-  // Get stats from the database
+  // Get stats data
+  const stats = await getStatsSummary();
+  
+  // Get data directly from the database using Supabase
   const supabase = await createSupabaseServerClient();
-  
-  // Get total user count
-  const { count: userCount } = await supabase
-    .from('profiles')
-    .select('*', { count: 'exact', head: true }) as { count: number | null };
-  
-  // Get total poll count
-  const { count: pollCount } = await supabase
-    .from('polls')
-    .select('*', { count: 'exact', head: true }) as { count: number | null };
-  
-  // Get total votes count
-  const { count: voteCount } = await supabase
-    .from('votes')
-    .select('*', { count: 'exact', head: true }) as { count: number | null };
   
   // Get recent polls with creator information
   const { data: recentPolls } = await supabase
@@ -85,15 +70,11 @@ export default async function AdminDashboardPage() {
     .order('created_at', { ascending: false })
     .limit(5) as { data: ProfileWithRole[] | null };
   
-  const stats: DashboardStat[] = [
-    { title: 'Total Users', value: userCount || 0, change: '+12%' },
-    { title: 'Total Polls', value: pollCount || 0, change: '+7%' },
-    { title: 'Total Votes', value: voteCount || 0, change: '+18%' },
-    { title: 'Active Polls', value: pollCount || 0, change: '+3%' },
-  ];
+  // Stats are now loaded from getStatsSummary()
   
   return (
     <div>
+      <ScrollToHash />
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
         <p className="text-gray-500">
@@ -108,64 +89,66 @@ export default async function AdminDashboardPage() {
       
       <DashboardStats stats={stats} />
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-        <Card className="p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Recent Polls</h2>
-            <a href="/admin/polls" className="text-sm text-blue-600 hover:text-blue-800">
-              View all polls →
-            </a>
-          </div>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Created By</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Date</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {recentPolls?.length ? (
-                recentPolls.map((poll) => (
-                  <TableRow key={poll.id}>
-                    <TableCell className="font-medium">
-                      <a 
-                        href={`/polls/${poll.id}`}
-                        className="max-w-[200px] truncate hover:text-blue-600 hover:underline flex items-center"
-                      >
-                        {poll.title}
-                      </a>
-                    </TableCell>
-                    <TableCell>
-                      {poll.profiles?.username 
-                        ? <span className="font-medium">{poll.profiles.username}</span>
-                        : poll.profiles?.full_name || 'Unknown'}
-                    </TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        poll.is_active 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {poll.is_active ? 'Active' : 'Inactive'}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(poll.created_at).toLocaleDateString()}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+        <div className="lg:col-span-2">
+          <Card className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Recent Polls</h2>
+              <a href="/admin/polls" className="text-sm text-blue-600 hover:text-blue-800">
+                View all polls →
+              </a>
+            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Created By</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Date</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentPolls?.length ? (
+                  recentPolls.map((poll) => (
+                    <TableRow key={poll.id}>
+                      <TableCell className="font-medium">
+                        <a 
+                          href={`/polls/${poll.id}`}
+                          className="max-w-[200px] truncate hover:text-blue-600 hover:underline flex items-center"
+                        >
+                          {poll.title}
+                        </a>
+                      </TableCell>
+                      <TableCell>
+                        {poll.profiles?.username 
+                          ? <span className="font-medium">{poll.profiles.username}</span>
+                          : poll.profiles?.full_name || 'Unknown'}
+                      </TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          poll.is_active 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {poll.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        {new Date(poll.created_at).toLocaleDateString()}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                      No polls found
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
-                    No polls found
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </Card>
+                )}
+              </TableBody>
+            </Table>
+          </Card>
+        </div>
         
         <Card className="p-6">
           <div className="flex justify-between items-center mb-4">

@@ -1,12 +1,13 @@
 'use client';
 
 import { Card } from '@/components/ui/card';
-import { ArrowUpIcon, ArrowDownIcon } from 'lucide-react';
+import { ArrowUpIcon, ArrowDownIcon, MinusIcon } from 'lucide-react';
 
 interface StatItem {
   title: string;
   value: number;
   change: string;
+  description?: string;
 }
 
 interface DashboardStatsProps {
@@ -18,19 +19,29 @@ export function DashboardStats({ stats }: DashboardStatsProps) {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {stats.map((stat, index) => {
         const isPositive = stat.change.startsWith('+');
+        const isNeutral = stat.change === '+0.0%';
         
         return (
-          <Card key={index} className="p-6">
+          <Card key={index} className="p-6 transition-all hover:shadow-md">
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-sm font-medium text-gray-500">{stat.title}</p>
                 <h3 className="text-2xl font-bold mt-2">{stat.value.toLocaleString()}</h3>
+                {stat.description && (
+                  <p className="text-xs text-gray-500 mt-1">{stat.description}</p>
+                )}
               </div>
               
               <div className={`flex items-center px-2 py-1 rounded-full text-xs ${
-                isPositive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                isNeutral 
+                  ? 'bg-gray-100 text-gray-800' 
+                  : isPositive 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-red-100 text-red-800'
               }`}>
-                {isPositive ? (
+                {isNeutral ? (
+                  <MinusIcon className="h-3 w-3 mr-1" />
+                ) : isPositive ? (
                   <ArrowUpIcon className="h-3 w-3 mr-1" />
                 ) : (
                   <ArrowDownIcon className="h-3 w-3 mr-1" />
