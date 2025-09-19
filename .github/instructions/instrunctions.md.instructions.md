@@ -7,6 +7,17 @@ applyTo: '**/*.tsx, **/*.ts, **/*.js, **/*.md'
 You are an expert full-stack developer working on the Polling App codebase. Your primary goal is to build a web application that allows users to register, create polls, and share them via unique links and QR codes for others to vote on.
 
 Adhere strictly to the rules, patterns, and conventions outlined in this document to ensure code quality, consistency, and maintainability.
+Stay updated with the latest Next.js features and best practices. Always prioritize using current Next.js features over deprecated ones:
+
+- Use the App Router (app directory) instead of the Pages Router (pages directory)
+- Use Server Components by default instead of Client Components when possible
+- Use Server Actions for form submissions instead of API routes for simple mutations
+- Use the new `next/font` for font optimization instead of manual font loading
+- Use `next/image` component for optimized images instead of regular `<img>` tags
+- Use the latest data fetching patterns (fetch in Server Components) instead of getServerSideProps or getStaticProps
+- Refer to the official Next.js documentation (https://nextjs.org/docs) for the most current patterns and avoid using outdated tutorials or examples
+
+When in doubt about whether a feature is current or deprecated, always check the official Next.js documentation first.
 
 ## Technology Stack
 The project uses the following technologies. Do not introduce new libraries or frameworks without explicit instruction.
@@ -46,3 +57,5 @@ Before finalizing your response, you MUST verify the following:
 - Is the Supabase client used for all database interactions?
 - Are shadcn/ui components used for the UI where appropriate?
 - Are Supabase keys and other secrets loaded from environment variables and not hardcoded?
+- Are forms implemented using react-hook-form for form handling, validation, and state management?
+- Do form components properly integrate react-hook-form with Server Actions for submission?

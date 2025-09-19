@@ -38,15 +38,17 @@ export default async function AdminDashboardPage() {
     .from('votes')
     .select('*', { count: 'exact', head: true });
   
-  // Get recent polls
+  // Get recent polls with creator information
   const { data: recentPolls } = await supabase
     .from('polls')
     .select(`
       id,
-      question,
+      title,
+      description,
       created_at,
-      user_id,
-      profiles!polls_user_id_fkey (username, full_name)
+      creator_id,
+      is_active,
+      profiles:creator_id (username, full_name)
     `)
     .order('created_at', { ascending: false })
     .limit(5);
@@ -54,13 +56,15 @@ export default async function AdminDashboardPage() {
   // Define a type for the poll data returned from Supabase
   type PollWithProfile = {
     id: string;
-    question: string;
+    title: string;
+    description: string | null;
     created_at: string;
-    user_id: string;
+    creator_id: string;
+    is_active: boolean;
     profiles: {
       username: string | null;
       full_name: string | null;
-    }[];
+    };
   };
     
   // Get recent users
@@ -95,35 +99,70 @@ export default async function AdminDashboardPage() {
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
         <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-4">Recent Polls</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Recent Polls</h2>
+            <a href="/admin/polls" className="text-sm text-blue-600 hover:text-blue-800">
+              View all polls →
+            </a>
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Question</TableHead>
+                <TableHead>Title</TableHead>
                 <TableHead>Created By</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Date</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(recentPolls as unknown as PollWithProfile[])?.map((poll) => (
-                <TableRow key={poll.id}>
-                  <TableCell className="font-medium">{poll.question}</TableCell>
-                  <TableCell>
-                    {poll.profiles && poll.profiles.length > 0
-                      ? poll.profiles[0]?.full_name || poll.profiles[0]?.username || 'Unknown'
-                      : 'Unknown'}
-                  </TableCell>
-                  <TableCell>
-                    {new Date(poll.created_at).toLocaleDateString()}
+              {recentPolls?.length ? (
+                (recentPolls as unknown as PollWithProfile[]).map((poll) => (
+                  <TableRow key={poll.id}>
+                    <TableCell className="font-medium">
+                      <a 
+                        href={`/polls/${poll.id}`}
+                        className="max-w-[200px] truncate hover:text-blue-600 hover:underline flex items-center"
+                      >
+                        {poll.title}
+                      </a>
+                    </TableCell>
+                    <TableCell>
+                      {poll.profiles?.username 
+                        ? <span className="font-medium">{poll.profiles.username}</span>
+                        : poll.profiles?.full_name || 'Unknown'}
+                    </TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        poll.is_active 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {poll.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(poll.created_at).toLocaleDateString()}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                    No polls found
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </Card>
         
         <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-4">Recent Users</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Recent Users</h2>
+            <a href="/admin/users" className="text-sm text-blue-600 hover:text-blue-800">
+              View all users →
+            </a>
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
@@ -133,25 +172,33 @@ export default async function AdminDashboardPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {recentUsers?.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">
-                    {user.full_name || user.username}
-                  </TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      user.role === 'admin' 
-                        ? 'bg-blue-100 text-blue-800' 
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {user.role}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(user.created_at).toLocaleDateString()}
+              {recentUsers?.length ? (
+                recentUsers.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell className="font-medium">
+                      {user.full_name || user.username || user.email}
+                    </TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        user.role === 'admin' 
+                          ? 'bg-blue-100 text-blue-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {user.role || 'user'}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(user.created_at).toLocaleDateString()}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center py-4 text-muted-foreground">
+                    No users found
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </Card>
