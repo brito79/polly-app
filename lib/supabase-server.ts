@@ -158,12 +158,18 @@ export async function createSupabaseServerClient() {
          * Next.js 15 doesn't allow setting cookies in Server Components
          * We intentionally don't attempt to set cookies here to avoid errors
          */
-        setAll(cookiesToSet) {
-          // No-op - cookies can't be set in Server Components
-          // This prevents Next.js errors while allowing auth to function
-          console.debug(`[AUTH] Cookie setting skipped in Server Component (${cookiesToSet.length} cookies)`);
-        },
-      },
+        async setAll(cookiesToSet) {
+          try {
+            const cookieStore = await cookies();
+            // Attempt to set cookies - will succeed in Server Actions/Route Handlers
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
+          } catch (error ) {
+            // Expected in Server Components - log but don't throw
+            console.debug(`[AUTH] Cookie setting skipped in Server Component context (${cookiesToSet.length} cookies)`);
+          }
+        },      },
       
       /**
        * 🌐 GLOBAL CLIENT CONFIGURATION

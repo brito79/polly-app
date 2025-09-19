@@ -9,13 +9,6 @@ import Image from 'next/image';
 /**
  * Interface for user data from the profiles table
  */
-// interface ActivityUser {
-//     id: string;
-//     username: string | null;
-//     full_name: string | null;
-//     avatar_url: string | null;
-//     email: string;
-// }
 
 /**
  * Type definition for activity items displayed in the recent activity feed
@@ -265,19 +258,6 @@ export function RecentActivity() {
         
         if (diffMinutes < 1) return 'just now';
         if (diffMinutes < 60) return `${diffMinutes}m ago`;
-        
-        const diffHours = Math.floor(diffMinutes / 60);
-        if (diffHours < 24) return `${diffHours}h ago`;
-        
-        return activityTime.toLocaleDateString();
-    }
-
-    /**
-     * Returns appropriate icon component for each activity type
-     * @param type - Activity type enum
-     * @returns Lucide icon component with consistent styling
-     */
-    function getActivityIcon(type: Activity['type']) {
         switch (type) {
             case 'poll_created':
                 return <MessageSquare className="h-4 w-4 text-blue-500" aria-hidden="true" />;
