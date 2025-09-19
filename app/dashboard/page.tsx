@@ -64,7 +64,7 @@ export default async function DashboardPage() {
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalPolls}</div>
               <p className="text-xs text-muted-foreground">
-                {stats.activePolls} active
+                {stats.activePolls} active across all users
               </p>
             </CardContent>
           </Card>
@@ -77,7 +77,7 @@ export default async function DashboardPage() {
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalVotes}</div>
               <p className="text-xs text-muted-foreground">
-                Across all polls
+                From all users on all polls
               </p>
             </CardContent>
           </Card>
@@ -90,7 +90,7 @@ export default async function DashboardPage() {
             <CardContent>
               <div className="text-2xl font-bold">{stats.activePolls}</div>
               <p className="text-xs text-muted-foreground">
-                Currently accepting votes
+                Currently accepting votes platform-wide
               </p>
             </CardContent>
           </Card>
@@ -105,7 +105,7 @@ export default async function DashboardPage() {
                 {stats.avgParticipation}
               </div>
               <p className="text-xs text-muted-foreground">
-                Votes per poll
+                Average votes per poll platform-wide
               </p>
             </CardContent>
           </Card>

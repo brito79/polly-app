@@ -83,34 +83,30 @@ export async function getUserStats() {
       throw new Error('Authentication required');
     }
 
-    // Get total polls count
+    // Get total polls count across ALL users
     const { count: totalPolls } = await supabase
       .from('polls')
-      .select('*', { count: 'exact', head: true })
-      .eq('creator_id', session.user.id);
+      .select('*', { count: 'exact', head: true });
 
-    // Get active polls count
+    // Get active polls count across ALL users
     const { count: activePolls } = await supabase
       .from('polls')
       .select('*', { count: 'exact', head: true })
-      .eq('creator_id', session.user.id)
       .eq('is_active', true);
 
-    // Get total votes across all user's polls
-    const { data: voteData } = await supabase
+    // Get total votes across ALL polls
+    const { count: totalVotes } = await supabase
       .from('votes')
-      .select('poll_id, polls!inner(creator_id)')
-      .eq('polls.creator_id', session.user.id);
-
-    const totalVotes = voteData?.length || 0;
+      .select('*', { count: 'exact', head: true });
 
     // Calculate average participation
-    const avgParticipation = totalPolls && totalPolls > 0 ? Math.round(totalVotes / totalPolls) : 0;
+    const safeVotes = totalVotes || 0;
+    const avgParticipation = totalPolls && totalPolls > 0 ? Math.round(safeVotes / totalPolls) : 0;
 
     return {
       totalPolls: totalPolls || 0,
       activePolls: activePolls || 0,
-      totalVotes,
+      totalVotes: safeVotes,
       avgParticipation,
     };
   } catch (error) {
