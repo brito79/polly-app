@@ -73,6 +73,7 @@ export function copyToClipboard(text: string): Promise<void> {
         } else {
           reject(new Error('Failed to copy to clipboard'));
         }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (err) {
         reject(new Error('Failed to copy to clipboard'));
       } finally {

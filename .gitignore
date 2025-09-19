@@ -12,6 +12,14 @@
 
 # testing
 /coverage
+*.test.*
+*.spec.*
+__tests__/
+/test/
+/tests/
+jest.config.*
+vitest.config.*
+.nyc_output/
 
 # next.js
 /.next/
@@ -32,6 +40,10 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # vercel
 .vercel
@@ -40,5 +52,55 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-mcp.json
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+/coverage/
+/.nyc_output
+
+# Temporary folders
+tmp/
+temp/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Supabase
+.supabase/
+
 # MCP configuration files
+mcp.json
+
+# Local development files
+.env.example
+*.local

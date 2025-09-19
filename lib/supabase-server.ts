@@ -165,7 +165,8 @@ export async function createSupabaseServerClient() {
             cookiesToSet.forEach(({ name, value, options }) => {
               cookieStore.set(name, value, options);
             });
-          } catch (error ) {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          } catch (error) {
             // Expected in Server Components - log but don't throw
             console.debug(`[AUTH] Cookie setting skipped in Server Component context (${cookiesToSet.length} cookies)`);
           }

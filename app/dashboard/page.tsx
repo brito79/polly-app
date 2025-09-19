@@ -8,6 +8,9 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getUserPolls, getUserStats } from "@/lib/actions/dashboard";
 import { UserPollsList } from "@/components/dashboard/UserPollsList";
 
+// Force dynamic rendering for this route since it uses cookies
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardPage() {
   const supabase = await createSupabaseServerClient();
   

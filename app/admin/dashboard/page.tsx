@@ -45,10 +45,23 @@ export default async function AdminDashboardPage() {
       id,
       question,
       created_at,
-      profiles:user_id (username, full_name)
+      user_id,
+      profiles!polls_user_id_fkey (username, full_name)
     `)
     .order('created_at', { ascending: false })
     .limit(5);
+    
+  // Define a type for the poll data returned from Supabase
+  type PollWithProfile = {
+    id: string;
+    question: string;
+    created_at: string;
+    user_id: string;
+    profiles: {
+      username: string | null;
+      full_name: string | null;
+    }[];
+  };
     
   // Get recent users
   const { data: recentUsers } = await supabase
@@ -92,11 +105,13 @@ export default async function AdminDashboardPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {recentPolls?.map((poll) => (
+              {(recentPolls as unknown as PollWithProfile[])?.map((poll) => (
                 <TableRow key={poll.id}>
                   <TableCell className="font-medium">{poll.question}</TableCell>
                   <TableCell>
-                    {poll.profiles?.full_name || poll.profiles?.username || 'Unknown'}
+                    {poll.profiles && poll.profiles.length > 0
+                      ? poll.profiles[0]?.full_name || poll.profiles[0]?.username || 'Unknown'
+                      : 'Unknown'}
                   </TableCell>
                   <TableCell>
                     {new Date(poll.created_at).toLocaleDateString()}
