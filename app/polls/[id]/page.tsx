@@ -7,13 +7,13 @@ import { SharePollDialog } from "@/components/polls/SharePollDialog";
 import { getPollWithResults, getUserVotesForPoll, checkIfUserCanVote } from "@/lib/actions/poll";
 
 interface PollDetailsPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function PollDetailsPage({ params }: PollDetailsPageProps) {
-  const pollId = params.id;
+  const { id: pollId } = await params;
 
   // Fetch poll data, user votes, and voting permissions in parallel
   const [poll, userVotes, votePermission] = await Promise.all([

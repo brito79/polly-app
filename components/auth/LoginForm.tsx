@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -49,7 +50,7 @@ import { useRouter } from "next/navigation";
  * 
  * See docs/SECURITY.md for complete security implementation details.
  */
-import { sanitizeInput } from '@/lib/utils';
+
 import { useFormSecurity } from '@/lib/security';
 /**
  * LIMITATIONS:
@@ -62,46 +63,46 @@ import { useFormSecurity } from '@/lib/security';
  * - windowMs: 15 minutes sliding window
  * - Uses Map for memory-efficient storage
  */
-const rateLimiter = {
-  attempts: new Map<string, { count: number; timestamp: number }>(),
-  maxAttempts: 5,
-  windowMs: 15 * 60 * 1000, // 15 minutes
+// const rateLimiter = {
+//   attempts: new Map<string, { count: number; timestamp: number }>(),
+//   maxAttempts: 5,
+//   windowMs: 15 * 60 * 1000, // 15 minutes
   
-  /**
-   * Checks if an identifier is currently rate limited
-   * @param identifier - Unique identifier for rate limiting (e.g., 'login-attempt')
-   * @returns Boolean indicating if rate limited
-   */
-  isRateLimited(identifier: string): boolean {
-    const now = Date.now();
-    const record = this.attempts.get(identifier);
+//   /**
+//    * Checks if an identifier is currently rate limited
+//    * @param identifier - Unique identifier for rate limiting (e.g., 'login-attempt')
+//    * @returns Boolean indicating if rate limited
+//    */
+//   isRateLimited(identifier: string): boolean {
+//     const now = Date.now();
+//     const record = this.attempts.get(identifier);
     
-    if (!record) return false;
+//     if (!record) return false;
     
-    // Reset if window expired (sliding window implementation)
-    if (now - record.timestamp > this.windowMs) {
-      this.attempts.delete(identifier);
-      return false;
-    }
+//     // Reset if window expired (sliding window implementation)
+//     if (now - record.timestamp > this.windowMs) {
+//       this.attempts.delete(identifier);
+//       return false;
+//     }
     
-    return record.count >= this.maxAttempts;
-  },
+//     return record.count >= this.maxAttempts;
+//   },
   
-  /**
-   * Records an authentication attempt for rate limiting
-   * @param identifier - Unique identifier for the attempt type
-   */
-  recordAttempt(identifier: string): void {
-    const now = Date.now();
-    const record = this.attempts.get(identifier);
+//   /**
+//    * Records an authentication attempt for rate limiting
+//    * @param identifier - Unique identifier for the attempt type
+//    */
+//   recordAttempt(identifier: string): void {
+//     const now = Date.now();
+//     const record = this.attempts.get(identifier);
     
-    if (!record || now - record.timestamp > this.windowMs) {
-      this.attempts.set(identifier, { count: 1, timestamp: now });
-    } else {
-      record.count++;
-    }
-  }
-};
+//     if (!record || now - record.timestamp > this.windowMs) {
+//       this.attempts.set(identifier, { count: 1, timestamp: now });
+//     } else {
+//       record.count++;
+//     }
+//   }
+// };
 
 /**
  * 🔐 SECURE LOGIN FORM MAIN COMPONENT

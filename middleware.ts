@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
+import type { ResponseCookie } from 'next/dist/compiled/@edge-runtime/cookies';
 import { createServerClient } from '@supabase/ssr';
 
 // Security: Validate redirect URLs to prevent open redirect attacks
@@ -44,17 +44,38 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll();
+        get(name: string) {
+          return request.cookies.get(name)?.value;
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+        set(name: string, value: string, options: Record<string, unknown>) {
+          // Apply default security options
+          const secure = process.env.NODE_ENV === 'production';
+          
+          // Update the supabaseResponse with the new cookie
           supabaseResponse = NextResponse.next({
             request,
           });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
+          
+          // Use the correct overload for cookies.set
+          supabaseResponse.cookies.set(name, value, {
+            secure,
+            sameSite: 'lax',
+            httpOnly: true,
+            path: '/',
+            ...options as Record<string, unknown>,
+          });
+        },
+        remove(name: string, options: Record<string, unknown>) {
+          // Update the supabaseResponse to delete the cookie
+          supabaseResponse = NextResponse.next({
+            request,
+          });
+          
+          // Use the correct overload for cookies.set
+          supabaseResponse.cookies.set(name, '', {
+            maxAge: 0,
+            ...options,
+          });
         },
       },
     }

@@ -1,4 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
+
 
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { requireAdmin } from '@/lib/auth';

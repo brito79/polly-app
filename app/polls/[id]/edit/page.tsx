@@ -8,8 +8,8 @@
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 
-interface PageProps {
-  params: { id: string };
+interface PollEditPageProps {
+  params: Promise<{ id: string }>;
 }
 
 /**
@@ -18,8 +18,9 @@ interface PageProps {
  * Placeholder for poll editing functionality. This page currently redirects
  * to the poll view page as editing is handled through other interfaces.
  */
-export default async function EditPollPage({ params }: PageProps) {
-  const pollId = params.id;
+export default async function EditPollPage({ params }: PollEditPageProps) {
+  const resolvedParams = await params;
+  const pollId = resolvedParams.id;
 
   // Security: Validate UUID format
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
