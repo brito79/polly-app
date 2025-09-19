@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase';
-import type { User, Session, AuthError } from '@supabase/supabase-js';
+import type { User, Session, AuthError, AuthChangeEvent } from '@supabase/supabase-js';
 
 /**
  * User profile type definition
@@ -310,7 +310,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
      */
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
       try {
         // Log auth events for security monitoring
         console.log(`[AUTH] State change: ${event}`);

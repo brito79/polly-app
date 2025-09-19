@@ -13,8 +13,33 @@ import { Suspense } from 'react';
 import { DashboardStats } from '@/components/admin/DashboardStats';
 import { RecentActivityServer } from '@/components/admin/RecentActivityServer';
 import { ActivitySkeleton } from '@/components/admin/ActivitySkeleton';
+import { Profile } from '@/types/database';
 
 export const dynamic = 'force-dynamic';
+
+// Types for dashboard components
+interface DashboardStat {
+  title: string;
+  value: number;
+  change: string;
+}
+
+interface PollWithProfile {
+  id: string;
+  title: string;
+  description: string | null;
+  created_at: string;
+  creator_id: string;
+  is_active: boolean;
+  profiles: {
+    username: string | null;
+    full_name: string | null;
+  };
+}
+
+interface ProfileWithRole extends Profile {
+  role?: string;
+}
 
 export default async function AdminDashboardPage() {
   // This will redirect if not admin
@@ -26,17 +51,17 @@ export default async function AdminDashboardPage() {
   // Get total user count
   const { count: userCount } = await supabase
     .from('profiles')
-    .select('*', { count: 'exact', head: true });
+    .select('*', { count: 'exact', head: true }) as { count: number | null };
   
   // Get total poll count
   const { count: pollCount } = await supabase
     .from('polls')
-    .select('*', { count: 'exact', head: true });
+    .select('*', { count: 'exact', head: true }) as { count: number | null };
   
   // Get total votes count
   const { count: voteCount } = await supabase
     .from('votes')
-    .select('*', { count: 'exact', head: true });
+    .select('*', { count: 'exact', head: true }) as { count: number | null };
   
   // Get recent polls with creator information
   const { data: recentPolls } = await supabase
@@ -51,30 +76,16 @@ export default async function AdminDashboardPage() {
       profiles:creator_id (username, full_name)
     `)
     .order('created_at', { ascending: false })
-    .limit(5);
-    
-  // Define a type for the poll data returned from Supabase
-  type PollWithProfile = {
-    id: string;
-    title: string;
-    description: string | null;
-    created_at: string;
-    creator_id: string;
-    is_active: boolean;
-    profiles: {
-      username: string | null;
-      full_name: string | null;
-    };
-  };
+    .limit(5) as { data: PollWithProfile[] | null };
     
   // Get recent users
   const { data: recentUsers } = await supabase
     .from('profiles')
     .select('*')
     .order('created_at', { ascending: false })
-    .limit(5);
+    .limit(5) as { data: ProfileWithRole[] | null };
   
-  const stats = [
+  const stats: DashboardStat[] = [
     { title: 'Total Users', value: userCount || 0, change: '+12%' },
     { title: 'Total Polls', value: pollCount || 0, change: '+7%' },
     { title: 'Total Votes', value: voteCount || 0, change: '+18%' },
@@ -116,7 +127,7 @@ export default async function AdminDashboardPage() {
             </TableHeader>
             <TableBody>
               {recentPolls?.length ? (
-                (recentPolls as unknown as PollWithProfile[]).map((poll) => (
+                recentPolls.map((poll) => (
                   <TableRow key={poll.id}>
                     <TableCell className="font-medium">
                       <a 

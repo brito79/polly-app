@@ -60,7 +60,7 @@ export async function getAppSettings() {
     // Transform the settings into a more usable format
     const settings: Record<string, unknown> = {};
     
-    data.forEach((setting) => {
+    data.forEach((setting: { key: string; value: unknown }) => {
       settings[setting.key] = setting.value;
     });
     

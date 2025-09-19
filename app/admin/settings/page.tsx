@@ -7,6 +7,7 @@ import { Settings, Mail, Shield, Cog } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
 interface Settings {
+  [key: string]: unknown;
   email_validation?: {
     allowed_domains: string[];
     block_disposable: boolean;
@@ -26,6 +27,11 @@ interface Settings {
   };
 }
 
+interface SettingRow {
+  key: string;
+  value: unknown;
+}
+
 export default async function AdminSettingsPage() {
   // This will redirect if not admin
   await requireAdmin();
@@ -40,8 +46,8 @@ export default async function AdminSettingsPage() {
   // Transform the settings data to a more usable format
   const settings: Settings = {};
   
-  settingsData?.forEach((setting) => {
-    settings[setting.key as keyof Settings] = setting.value;
+  settingsData?.forEach((setting: SettingRow) => {
+    settings[setting.key] = setting.value;
   });
   
   // If there's no email_validation setting yet, create a default

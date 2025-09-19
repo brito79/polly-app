@@ -9,6 +9,50 @@ import Image from 'next/image';
 /**
  * Interface for user data from the profiles table
  */
+interface ProfileWithRole {
+    id: string;
+    username: string;
+    full_name?: string;
+    avatar_url?: string;
+    role: string;
+    created_at: string;
+    email?: string;
+}
+
+/**
+ * Interface for vote data
+ */
+interface Vote {
+    id: string;
+    poll_id: string;
+    option_id: string;
+    voter_id: string;
+    created_at: string;
+    profiles?: ProfileWithRole;
+    voter?: ProfileWithRole | ProfileWithRole[];
+    poll?: {
+        title: string;
+        options?: {
+            text: string;
+        }[];
+    } | Array<{
+        title: string;
+        options?: {
+            text: string;
+        }[];
+    }>;
+    polls?: {
+        title: string;
+        options?: {
+            text: string;
+        }[];
+    };
+    option?: {
+        text: string;
+    } | Array<{
+        text: string;
+    }>;
+}
 
 /**
  * Type definition for activity items displayed in the recent activity feed
@@ -22,7 +66,7 @@ type Activity = {
         id: string;
         name: string;
         avatar?: string;
-        email: string;
+        email?: string;
     };
     metadata?: {
         poll_title?: string;
@@ -137,67 +181,75 @@ export function RecentActivity() {
                 const combinedActivities: Activity[] = [];
 
                 // Process poll creation activities
-                recentPolls?.forEach(poll => {
+                recentPolls?.forEach((poll: Record<string, unknown>) => {
                     // Handle potential array return from Supabase joins
-                    const creator = Array.isArray(poll.creator) ? poll.creator[0] : poll.creator;
+                    const creator = Array.isArray((poll as Record<string, unknown>).creator) ? 
+                        ((poll as Record<string, unknown>).creator as Record<string, unknown>[])[0] : 
+                        (poll as Record<string, unknown>).creator as Record<string, unknown>;
                     if (creator) {
                         combinedActivities.push({
                             id: `poll_${poll.id}`,
                             type: 'poll_created',
                             content: `Created a new poll: "${poll.title}"`,
-                            timestamp: poll.created_at,
+                            timestamp: poll.created_at as string,
                             user: {
-                                id: creator.id,
-                                name: creator.full_name || creator.username || 'Anonymous User',
-                                avatar: creator.avatar_url || undefined,
-                                email: creator.email
+                                id: creator.id as string,
+                                name: (creator.full_name as string) || (creator.username as string) || 'Anonymous User',
+                                avatar: creator.avatar_url as string | undefined,
+                                email: creator.email as string | undefined
                             },
                             metadata: {
-                                poll_title: poll.title
+                                poll_title: poll.title as string
                             }
                         });
                     }
                 });
 
                 // Process vote activities
-                recentVotes?.forEach(vote => {
-                    const voter = Array.isArray(vote.voter) ? vote.voter[0] : vote.voter;
-                    const poll = Array.isArray(vote.poll) ? vote.poll[0] : vote.poll;
-                    const option = Array.isArray(vote.option) ? vote.option[0] : vote.option;
+                recentVotes?.forEach((vote: Record<string, unknown>) => {
+                    const voter = Array.isArray(vote.voter) ? 
+                        (vote.voter as Record<string, unknown>[])[0] : 
+                        vote.voter as Record<string, unknown>;
+                    const poll = Array.isArray(vote.poll) ? 
+                        (vote.poll as Record<string, unknown>[])[0] : 
+                        vote.poll as Record<string, unknown>;
+                    const option = Array.isArray(vote.option) ? 
+                        (vote.option as Record<string, unknown>[])[0] : 
+                        vote.option as Record<string, unknown>;
                     
                     // Ensure all required data is present before creating activity
                     if (voter && poll && option) {
                         combinedActivities.push({
                             id: `vote_${vote.id}`,
                             type: 'vote_cast',
-                            content: `Voted "${option.text}" on poll: "${poll.title}"`,
-                            timestamp: vote.created_at,
+                            content: `Voted "${option.text as string}" on poll: "${poll.title as string}"`,
+                            timestamp: vote.created_at as string,
                             user: {
-                                id: voter.id,
-                                name: voter.full_name || voter.username || 'Anonymous User',
-                                avatar: voter.avatar_url || undefined,
-                                email: voter.email
+                                id: voter.id as string,
+                                name: (voter.full_name as string) || (voter.username as string) || 'Anonymous User',
+                                avatar: voter.avatar_url as string | undefined,
+                                email: voter.email as string | undefined
                             },
                             metadata: {
-                                poll_title: poll.title,
-                                option_text: option.text
+                                poll_title: poll.title as string,
+                                option_text: option.text as string
                             }
                         });
                     }
                 });
 
                 // Process user registration activities
-                recentUsers?.forEach(user => {
+                recentUsers?.forEach((user: Record<string, unknown>) => {
                     combinedActivities.push({
                         id: `user_${user.id}`,
                         type: 'user_registered',
                         content: 'Joined the platform',
-                        timestamp: user.created_at,
+                        timestamp: user.created_at as string,
                         user: {
-                            id: user.id,
-                            name: user.full_name || user.username || 'New User',
-                            avatar: user.avatar_url || undefined,
-                            email: user.email
+                            id: user.id as string,
+                            name: (user.full_name as string) || (user.username as string) || 'New User',
+                            avatar: user.avatar_url as string | undefined,
+                            email: user.email as string | undefined
                         }
                     });
                 });

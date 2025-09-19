@@ -28,6 +28,28 @@ interface Poll {
   }>;
 }
 
+interface RawPollData {
+  id: string;
+  title: string;
+  description: string;
+  created_at: string;
+  expires_at: string;
+  is_active: boolean;
+  allow_anonymous: boolean;
+  profiles: {
+    username: string;
+    full_name: string;
+  } | Array<{
+    username: string;
+    full_name: string;
+  }> | null;
+  poll_options: Array<{
+    id: string;
+    text: string;
+    votes: Array<{ id: string }>;
+  }>;
+}
+
 export default async function AdminPollsPage() {
   // This will redirect if not admin
   await requireAdmin();
@@ -59,7 +81,7 @@ export default async function AdminPollsPage() {
     .limit(50);
   
   // Transform the data to match our interface
-  const polls: Poll[] = pollsData?.map(poll => ({
+  const polls: Poll[] = pollsData?.map((poll: RawPollData) => ({
     ...poll,
     profiles: Array.isArray(poll.profiles) ? poll.profiles[0] : poll.profiles
   })) || [];
