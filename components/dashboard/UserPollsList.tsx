@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { MoreHorizontal, Edit, Trash2, Eye, Share, Users, BarChart3, Clock, Play, Pause } from "lucide-react";
 import { Poll } from "@/types/database";
-import { deletePoll, togglePollStatus } from "@/lib/actions/dashboard";
+import { deletePoll, togglePollStatus, testPollAccess } from "@/lib/actions/dashboard";
 import { useRouter } from "next/navigation";
 
 interface UserPollsListProps {
@@ -51,28 +51,49 @@ export function UserPollsList({ polls }: UserPollsListProps) {
     return new Date(expiresAt) < new Date();
   };
 
-  const handleDelete = async (pollId: string) => {
+    const handleTestPollAccess = async (pollId: string) => {
+    console.log('[UI] Testing poll access for:', pollId);
+    const result = await testPollAccess(pollId);
+    console.log('[UI] Test poll access result:', result);
+  };
+
+  const handleDelete = (pollId: string) => {
+    console.log('[UI] Starting delete for poll:', pollId);
+    console.log('[UI] Poll ID type:', typeof pollId);
+    console.log('[UI] Poll ID length:', pollId.length);
+    
+    // Test authentication first
+    // await testAuth();
+    
     setDeletingId(pollId);
     startTransition(async () => {
       const result = await deletePoll(pollId);
+      console.log('[UI] Delete result:', result);
       if (result.success) {
+        console.log('[UI] Delete successful, refreshing...');
         router.refresh();
       } else {
         console.error('Failed to delete poll:', result.error);
-        // You could add toast notification here
+        alert(`Failed to delete poll: ${result.error}`);
       }
       setDeletingId(null);
     });
   };
 
   const handleToggleStatus = async (pollId: string, currentStatus: boolean) => {
+    console.log('[UI] Starting toggle status for poll:', pollId, 'current status:', currentStatus);
+    console.log('[UI] Poll ID type:', typeof pollId);
+    console.log('[UI] Poll ID length:', pollId.length);
+    
     startTransition(async () => {
       const result = await togglePollStatus(pollId, !currentStatus);
+      console.log('[UI] Toggle result:', result);
       if (result.success) {
+        console.log('[UI] Toggle successful, refreshing...');
         router.refresh();
       } else {
         console.error('Failed to update poll status:', result.error);
-        // You could add toast notification here
+        alert(`Failed to update poll status: ${result.error}`);
       }
     });
   };
@@ -178,6 +199,11 @@ export function UserPollsList({ polls }: UserPollsListProps) {
                             Activate
                           </>
                         )}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleTestPollAccess(poll.id)}
+                      >
+                        🔍 Test Access
                       </DropdownMenuItem>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>

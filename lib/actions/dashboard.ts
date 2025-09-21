@@ -3,6 +3,50 @@
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { Poll } from '@/types/database';
 
+// Test function to debug specific poll access
+export async function testPollAccess(pollId: string) {
+  try {
+    console.log('[TEST_POLL] Testing access to poll:', pollId);
+    const supabase = await createSupabaseServerClient();
+    
+    // Test authentication
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    if (authError || !session) {
+      return { success: false, error: 'Authentication failed', details: authError };
+    }
+    
+    console.log('[TEST_POLL] User ID:', session.user.id);
+    
+    // Test if poll exists at all (bypassing RLS temporarily)
+    const { data: pollExists, error: existsError } = await supabase
+      .from('polls')
+      .select('id, title, creator_id, is_active')
+      .eq('id', pollId);
+      
+    console.log('[TEST_POLL] Poll exists check:', { pollExists, error: existsError });
+    
+    // Test if we can access it with RLS
+    const { data: pollWithRLS, error: rlsError } = await supabase
+      .from('polls')
+      .select('id, title, creator_id, is_active')
+      .eq('id', pollId)
+      .single();
+      
+    console.log('[TEST_POLL] Poll with RLS:', { pollWithRLS, error: rlsError });
+    
+    return { 
+      success: true, 
+      session: { userId: session.user.id },
+      pollExists: pollExists || [],
+      pollWithRLS,
+      errors: { existsError, rlsError }
+    };
+  } catch (error) {
+    console.error('[TEST_POLL] Error:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
 export async function getUserPolls() {
   try {
     const supabase = await createSupabaseServerClient();
@@ -122,14 +166,18 @@ export async function getUserStats() {
 
 export async function deletePoll(pollId: string) {
   try {
+    console.log('[DELETE_POLL] Starting deletion for poll ID:', pollId);
     const supabase = await createSupabaseServerClient();
 
     // Get the authenticated user
     const { data: { session }, error: authError } = await supabase.auth.getSession();
     
     if (authError || !session) {
+      console.error('[DELETE_POLL] Authentication error:', authError);
       throw new Error('Authentication required');
     }
+
+    console.log('[DELETE_POLL] Authenticated user ID:', session.user.id);
 
     // Verify the poll belongs to the current user
     const { data: poll, error: pollError } = await supabase
@@ -138,9 +186,20 @@ export async function deletePoll(pollId: string) {
       .eq('id', pollId)
       .single();
 
-    if (pollError || !poll) {
+    console.log('[DELETE_POLL] Poll query result:', { poll, pollError });
+
+    if (pollError) {
+      console.error('[DELETE_POLL] Database error:', pollError);
+      throw new Error(`Poll not found: ${pollError.message}`);
+    }
+
+    if (!poll) {
+      console.error('[DELETE_POLL] No poll data returned');
       throw new Error('Poll not found');
     }
+
+    console.log('[DELETE_POLL] Poll creator ID:', poll.creator_id);
+    console.log('[DELETE_POLL] Current user ID:', session.user.id);
 
     if (poll.creator_id !== session.user.id) {
       throw new Error('Unauthorized: You can only delete your own polls');
@@ -153,9 +212,11 @@ export async function deletePoll(pollId: string) {
       .eq('id', pollId);
 
     if (deleteError) {
-      throw new Error('Failed to delete poll');
+      console.error('[DELETE_POLL] Delete error:', deleteError);
+      throw new Error(`Failed to delete poll: ${deleteError.message}`);
     }
 
+    console.log('[DELETE_POLL] Poll deleted successfully');
     return { success: true };
   } catch (error) {
     console.error('Error deleting poll:', error);
@@ -168,14 +229,18 @@ export async function deletePoll(pollId: string) {
 
 export async function togglePollStatus(pollId: string, isActive: boolean) {
   try {
+    console.log('[TOGGLE_POLL] Starting status toggle for poll ID:', pollId, 'to:', isActive);
     const supabase = await createSupabaseServerClient();
 
     // Get the authenticated user
     const { data: { session }, error: authError } = await supabase.auth.getSession();
     
     if (authError || !session) {
+      console.error('[TOGGLE_POLL] Authentication error:', authError);
       throw new Error('Authentication required');
     }
+
+    console.log('[TOGGLE_POLL] Authenticated user ID:', session.user.id);
 
     // Verify the poll belongs to the current user
     const { data: poll, error: pollError } = await supabase
@@ -184,9 +249,20 @@ export async function togglePollStatus(pollId: string, isActive: boolean) {
       .eq('id', pollId)
       .single();
 
-    if (pollError || !poll) {
+    console.log('[TOGGLE_POLL] Poll query result:', { poll, pollError });
+
+    if (pollError) {
+      console.error('[TOGGLE_POLL] Database error:', pollError);
+      throw new Error(`Poll not found: ${pollError.message}`);
+    }
+
+    if (!poll) {
+      console.error('[TOGGLE_POLL] No poll data returned');
       throw new Error('Poll not found');
     }
+
+    console.log('[TOGGLE_POLL] Poll creator ID:', poll.creator_id);
+    console.log('[TOGGLE_POLL] Current user ID:', session.user.id);
 
     if (poll.creator_id !== session.user.id) {
       throw new Error('Unauthorized: You can only modify your own polls');
@@ -199,9 +275,11 @@ export async function togglePollStatus(pollId: string, isActive: boolean) {
       .eq('id', pollId);
 
     if (updateError) {
-      throw new Error('Failed to update poll status');
+      console.error('[TOGGLE_POLL] Update error:', updateError);
+      throw new Error(`Failed to update poll status: ${updateError.message}`);
     }
 
+    console.log('[TOGGLE_POLL] Poll status updated successfully');
     return { success: true };
   } catch (error) {
     console.error('Error updating poll status:', error);
