@@ -2,13 +2,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import { SuccessAnimation } from "@/components/ui/success-animation";
 
 /**
  * 🔐 SECURE LOGIN FORM COMPONENT
@@ -144,6 +145,8 @@ export function LoginForm() {
   const [password, setPassword] = useState(''); // User password input  
   const [error, setError] = useState<string | null>(null); // Error display state
   const [isLoading, setIsLoading] = useState(false); // Loading state for UX
+  const [showSuccess, setShowSuccess] = useState(false); // Success animation state
+  const [formVisible, setFormVisible] = useState(true); // Form visibility for animations
   
   // 🔗 EXTERNAL DEPENDENCIES
   const { signIn, user, userRole, loading } = useAuth(); // Authentication context for secure login
@@ -153,15 +156,23 @@ export function LoginForm() {
   // If user is already logged in, redirect them based on their role
   useEffect(() => {
     console.log('[LOGIN] useEffect triggered:', { loading, user: !!user, userRole });
+    
+    // Only redirect if we have a user and their role, and we're not in a loading state
     if (!loading && user && userRole) {
       console.log('[LOGIN] Redirecting user with role:', userRole);
-      if (userRole === 'admin') {
-        console.log('[LOGIN] Redirecting to admin dashboard');
-        router.push('/admin/dashboard');
-      } else {
-        console.log('[LOGIN] Redirecting to user dashboard');
-        router.push('/dashboard');
-      }
+      
+      // Add a small delay to ensure UI transitions smoothly
+      const redirectTimer = setTimeout(() => {
+        if (userRole === 'admin') {
+          console.log('[LOGIN] Redirecting to admin dashboard');
+          router.push('/admin/dashboard');
+        } else {
+          console.log('[LOGIN] Redirecting to user dashboard');
+          router.push('/dashboard');
+        }
+      }, 500); // 500ms delay for smoother transition
+      
+      return () => clearTimeout(redirectTimer);
     }
   }, [user, userRole, loading, router]);
   
@@ -233,7 +244,7 @@ export function LoginForm() {
       }
 
       // 🔐 AUTHENTICATION ATTEMPT via secure AuthContext
-      const { error } = await signIn(sanitizedEmail, sanitizedPassword);
+      const { error, success, userId } = await signIn(sanitizedEmail, sanitizedPassword);
 
       if (error) {
         // Rate limiting handled by useFormSecurity hook
@@ -242,9 +253,27 @@ export function LoginForm() {
         return;
       }
 
-      // ✅ SUCCESS: Authentication successful - redirect will be handled by useEffect
-      // The AuthContext will update the user and userRole state, triggering the redirect
-      // No need to manually redirect here as the useEffect will handle it automatically
+      // ✅ SUCCESS: Authentication successful
+      console.log('[LOGIN] Login successful:', { success, userId });
+      
+      // Clear any previous errors
+      setError(null);
+      
+      // Hide form and show success animation for better UX
+      setFormVisible(false);
+      setShowSuccess(true);
+      
+      // Keep loading state active during animation
+      // The redirect will be handled by the useEffect after the animation completes
+      
+      // Fallback direct redirect after a delay if useEffect doesn't trigger
+      setTimeout(() => {
+        if (!loading) {
+          console.log('[LOGIN] Manual redirect initiated');
+          // Default to user dashboard, but useEffect should handle this more accurately
+          router.push('/dashboard');
+        }
+      }, 2500); // Longer timeout to accommodate the animation
       
     } catch (error) {
       // 🚨 ERROR HANDLING: Log for debugging but don't expose details
@@ -256,30 +285,50 @@ export function LoginForm() {
     }
   };
 
-  // 🎨 COMPONENT RENDER: Secure and accessible JSX
+  // 🎨 COMPONENT RENDER: Secure and accessible JSX with animations
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold">Sign In</CardTitle>
-        <CardDescription>
-          Enter your credentials to access your account
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {/* 📝 LOGIN FORM: Comprehensive form with security measures */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Hidden CSRF token for protection */}
-          <input type="hidden" name="csrf_token" value={csrfToken} />
+    <>
+      {/* Success animation overlay */}
+      {showSuccess && (
+        <SuccessAnimation 
+          message="Login successful! Redirecting..." 
+          onComplete={() => {
+            setShowSuccess(false);
+            // Force redirect if not already redirected
+            router.push(userRole === 'admin' ? '/admin/dashboard' : '/dashboard');
+          }}
+        />
+      )}
+    
+      {/* Login form with fade-in animation */}
+      <Card 
+        className={`w-full max-w-md mx-auto transition-all duration-300 ${
+          formVisible 
+            ? 'opacity-100 transform translate-y-0' 
+            : 'opacity-0 transform -translate-y-4'
+        } ${showSuccess ? 'pointer-events-none' : ''}`}
+      >
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold">Sign In</CardTitle>
+          <CardDescription>
+            Enter your credentials to access your account
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {/* 📝 LOGIN FORM: Comprehensive form with security measures */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Hidden CSRF token for protection */}
+            <input type="hidden" name="csrf_token" value={csrfToken} />
+            
+            {/* 🚨 ERROR DISPLAY: User-friendly error messages */}
+            {error && (
+              <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded-md animate-in slide-in-from-top duration-300">
+                {error}
+              </div>
+            )}
           
-          {/* 🚨 ERROR DISPLAY: User-friendly error messages */}
-          {error && (
-            <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded-md">
-              {error}
-            </div>
-          )}
-          
-          {/* 📧 EMAIL INPUT: Sanitized and validated */}
-          <div className="space-y-2">
+          {/* 📧 EMAIL INPUT: Sanitized and validated with animation */}
+          <div className="space-y-2 animate-in fade-in-50 duration-300 delay-75">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
@@ -289,12 +338,14 @@ export function LoginForm() {
               onChange={(e) => setEmail(sanitize(e.target.value))} // Real-time sanitization
               maxLength={254} // 🛡️ SECURITY: Prevent buffer overflow (RFC 5321 limit)
               autoComplete="email" // Browser autofill support
+              className="transition-all focus:scale-[1.02] duration-300"
+              disabled={isLoading || showSuccess}
               required
             />
           </div>
 
-          {/* 🔒 PASSWORD INPUT: Sanitized with secure attributes */}
-          <div className="space-y-2">
+          {/* 🔒 PASSWORD INPUT: Sanitized with secure attributes and animation */}
+          <div className="space-y-2 animate-in fade-in-50 duration-300 delay-150">
             <Label htmlFor="password">Password</Label>
             <Input
               id="password"
@@ -304,17 +355,25 @@ export function LoginForm() {
               onChange={(e) => setPassword(sanitize(e.target.value))} // Real-time sanitization
               maxLength={128} // 🛡️ SECURITY: Prevent buffer overflow attacks
               autoComplete="current-password" // Browser autofill support
+              className="transition-all focus:scale-[1.02] duration-300"
+              disabled={isLoading || showSuccess}
               required
             />
           </div>
 
           {/* 🚀 SUBMIT BUTTON: Loading state and accessibility */}
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Signing in..." : "Sign In"}
-          </Button>
+          <LoadingButton 
+            type="submit" 
+            className="w-full animate-in fade-in-50 slide-in-from-bottom-3 duration-300 delay-200" 
+            isLoading={isLoading} // Only use local loading state for the button
+            loadingText="Signing in..."
+            disabled={showSuccess}
+          >
+            Sign In
+          </LoadingButton>
 
-          {/* 📱 VISUAL SEPARATOR: Clean UI design */}
-          <div className="relative">
+          {/* 📱 VISUAL SEPARATOR: Clean UI design with animation */}
+          <div className="relative animate-in fade-in duration-300 delay-300">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t" />
             </div>
@@ -325,22 +384,23 @@ export function LoginForm() {
             </div>
           </div>
 
-          {/* 🔗 ALTERNATIVE AUTH: Magic link option */}
-          <div className="text-center">
-            <Link href="/auth/magic-link" className="text-sm text-primary hover:underline">
+          {/* 🔗 ALTERNATIVE AUTH: Magic link option with animation */}
+          <div className="text-center animate-in fade-in duration-300 delay-[350ms]">
+            <Link href="/auth/magic-link" className="text-sm text-primary hover:underline transition-all hover:scale-105 inline-block">
               Sign in with Magic Link
             </Link>
           </div>
 
-          {/* 🔗 REGISTRATION LINK: Navigate to sign up */}
-          <div className="text-center text-sm">
+          {/* 🔗 REGISTRATION LINK: Navigate to sign up with animation */}
+          <div className="text-center text-sm animate-in fade-in duration-300 delay-[400ms]">
             <span className="text-muted-foreground">Don&apos;t have an account? </span>
-            <Link href="/auth/register" className="text-primary hover:underline">
+            <Link href="/auth/register" className="text-primary hover:underline transition-all hover:scale-105 inline-block">
               Sign up
             </Link>
           </div>
         </form>
       </CardContent>
     </Card>
+    </>
   );
 }

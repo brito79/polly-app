@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -367,14 +368,15 @@ export function RegisterForm() {
           </div>
 
           {/* 🔘 SUBMIT BUTTON: Adaptive text based on form state */}
-          <Button 
+          <LoadingButton 
             type="submit" 
             className="w-full" 
-            disabled={isLoading || !!emailInstructions} // ✅ Prevent multiple submissions
-            aria-busy={isLoading}
+            isLoading={isLoading}
+            loadingText="Creating account..."
+            disabled={!!emailInstructions} // ✅ Prevent submissions after creation
           >
-            {isLoading ? "Creating account..." : emailInstructions ? "Account created" : "Create Account"}
-          </Button>
+            {emailInstructions ? "Account created" : "Create Account"}
+          </LoadingButton>
 
           {/* 📱 CONDITIONAL NAVIGATION: Shows different options based on registration state */}
           {emailInstructions ? (

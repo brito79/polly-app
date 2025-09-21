@@ -69,7 +69,7 @@ export function Navbar() {
   // 🧭 NAVIGATION: Next.js router for programmatic navigation
   const router = useRouter();
   // 👤 AUTHENTICATION: Current user and session state
-  const { user, session, userRole, signOut } = useAuth();
+  const { user, session, userRole, signOut, loading } = useAuth();
 
   /**
    * 🗺️ NAVIGATION CONFIGURATION
@@ -86,16 +86,34 @@ export function Navbar() {
    * 🔒 SECURE LOGOUT HANDLER
    * 
    * Handles user logout with proper session cleanup and navigation
+   * Enhanced with loading state management and toast feedback
    */
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  
   const handleLogout = async () => {
     try {
+      // Set local loading state
+      setIsLoggingOut(true);
+      
+      console.log('[NAVBAR] Logout initiated');
+      
       // 🔐 AUTHENTICATION: Secure logout via auth context
+      // The navigation is now handled within signOut for more reliability
       await signOut();
-      // 🧭 NAVIGATION: Redirect to home page after logout
-      router.push("/");
+      
+      // No need to manually navigate - AuthContext handles the redirect
+      
     } catch (error) {
       // 🚨 ERROR HANDLING: Log error but don't expose sensitive information
-      console.error("Logout error:", error);
+      console.error("[NAVBAR] Logout error:", error);
+      
+      // Show error toast or message (if you have a toast component)
+      // toast.error("Failed to log out. Please try again.");
+      
+      // Force navigation to login as a fallback
+      window.location.href = '/auth/login';
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -206,9 +224,28 @@ export function Navbar() {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   {/* 🚪 LOGOUT ACTION: Secure user logout */}
-                  <DropdownMenuItem onSelect={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
-                    Log out
+                  <DropdownMenuItem 
+                    onSelect={(e) => {
+                      if (isLoggingOut || loading) {
+                        // Prevent action if already logging out
+                        e.preventDefault();
+                        return;
+                      }
+                      handleLogout();
+                    }}
+                    disabled={isLoggingOut || loading}
+                  >
+                    {isLoggingOut || loading ? (
+                      <>
+                        <span className="mr-2 h-4 w-4 animate-spin">◌</span>
+                        Logging out...
+                      </>
+                    ) : (
+                      <>
+                        <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
+                        Log out
+                      </>
+                    )}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -315,9 +352,19 @@ export function Navbar() {
                             setIsSheetOpen(false);
                             handleLogout();
                           }}
+                          disabled={isLoggingOut || loading}
                         >
-                          <LogOut className="mr-2 h-4 w-4" />
-                          Log out
+                          {isLoggingOut || loading ? (
+                            <>
+                              <span className="mr-2 h-4 w-4 animate-spin">◌</span>
+                              Logging out...
+                            </>
+                          ) : (
+                            <>
+                              <LogOut className="mr-2 h-4 w-4" />
+                              Log out
+                            </>
+                          )}
                         </Button>
                       </div>
                     </div>

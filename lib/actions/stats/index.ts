@@ -19,7 +19,7 @@ export async function getStatsSummary(): Promise<StatItem[]> {
     .select('*', { count: 'exact', head: true });
 
   if (userError) {
-    console.error('Error fetching user data:', userError);
+    console.error('Error fetching user data (getStatSummary):', userError);
     return generateDefaultStats();
   }
 
