@@ -383,6 +383,26 @@ The project is fully typed with TypeScript, including:
 5. **Testing**: Add unit and integration tests
 6. **Deployment**: Deploy to Vercel, Netlify, or similar platform
 
+## ⚠️ Known Build Warnings
+
+During the build process, you may see the following warnings. These are expected and don't affect functionality:
+
+### Edge Runtime Warnings
+```
+A Node.js API is used (process.versions/process.version) which is not supported in the Edge Runtime.
+```
+- **Cause**: Supabase realtime-js library uses Node.js APIs not available in Edge Runtime
+- **Impact**: None - these are warnings only and don't break functionality
+- **Status**: Expected behavior, waiting for Supabase library updates
+
+### Dynamic Server Usage Messages
+```
+[AUTH] Error retrieving cookies: Route /settings/notifications couldn't be rendered statically
+```
+- **Cause**: Authentication pages use `cookies()` which prevents static generation
+- **Impact**: None - pages are correctly rendered dynamically
+- **Solution**: Already implemented with `export const dynamic = 'force-dynamic'`
+
 ## 🤝 Contributing
 
 1. Fork the repository

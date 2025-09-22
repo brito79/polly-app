@@ -18,6 +18,9 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      "jest.setup.cjs",
+      "temp-log.js",
+      "supabase/functions/**",
     ],
   },
 ];

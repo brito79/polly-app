@@ -118,7 +118,7 @@ supabase functions deploy poll-notifications
 
 ### 1. Set Up Edge Function Secrets ✅
 ```bash
-supabase secrets set RESEND_API_KEY=re_9Jy7BzyA_ECtbstDwwSEBB4g7Ej4SPteS
+supabase secrets set RESEND_API_KEY=''
 supabase secrets set APP_URL=http://localhost:3000
 ```
 

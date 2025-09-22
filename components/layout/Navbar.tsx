@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -66,8 +65,6 @@ import { useAuth } from "@/context/AuthContext";
 export function Navbar() {
   // 📱 MOBILE NAVIGATION STATE: Sheet open/close state
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  // 🧭 NAVIGATION: Next.js router for programmatic navigation after successful login/logout
-  const router = useRouter(); // Used in handleLogout for redirection
   // 👤 AUTHENTICATION: Current user and session state
   const { user, session, userRole, signOut, loading } = useAuth();
 

@@ -5,6 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UserPollNotificationsTable from '@/components/settings/UserPollNotificationsTable';
 
+// Force dynamic rendering - this page uses authentication and cannot be statically generated
+export const dynamic = 'force-dynamic';
+
 export default async function NotificationSettingsPage() {
   const supabase = await createSupabaseServerClient();
   const { data: { session } } = await supabase.auth.getSession();

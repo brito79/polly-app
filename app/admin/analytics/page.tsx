@@ -1,8 +1,6 @@
-import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { requireAdmin } from '@/lib/auth';
 import { Card } from '@/components/ui/card';
 import { Suspense } from 'react';
-import { Profile } from '@/types/database';
 import { getAdminDashboardAnalytics } from '@/lib/actions/analytics';
 import { AnalyticsChart, MultiLineChart } from '@/components/admin/AnalyticsChart';
 import { RealTimeAnalytics } from '@/components/admin/RealTimeAnalytics';

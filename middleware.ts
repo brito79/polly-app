@@ -1,5 +1,4 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import type { ResponseCookie } from 'next/dist/compiled/@edge-runtime/cookies';
 import { createServerClient } from '@supabase/ssr';
 
 // Security: Validate redirect URLs to prevent open redirect attacks

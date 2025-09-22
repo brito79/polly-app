@@ -1,5 +1,8 @@
 // @ts-check
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from "@supabase/supabase-js";
+
+// Type alias for Supabase client in Edge Function environment
+type SupabaseClientType = ReturnType<typeof createClient>;
 
 /**
  * @fileoverview Supabase Edge Function for Poll Notifications

@@ -66,3 +66,8 @@ export async function createPoll(formData: FormData) {
   const supabase = await createSupabaseServerClient();
   // mutation logic with auth + RLS enforcement
 }
+
+
+---
+- **Don't expose any API keys or secrets in the client bundle, inside `.md` files, or in any file.**
+---
