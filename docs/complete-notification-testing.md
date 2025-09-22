@@ -17,29 +17,29 @@ The email notification system has been successfully implemented and tested! Here
 **Last Test Results** (September 22, 2025):
 ```json
 {
-  "success": true,
-  "totalNotificationsSent": 3,
-  "pollsProcessed": 3,
-  "results": [
-    {
-      "pollId": "a9d4146b-3571-477f-97fd-aec671d07a45",
-      "pollTitle": "My Name",
-      "notificationType": "expired",
-      "usersNotified": 1
-    },
-    {
-      "pollId": "f2060b4e-f8ec-4ed6-8a3a-36ff1d57e4d3",
-      "pollTitle": "My Question", 
-      "notificationType": "expired",
-      "usersNotified": 1
-    },
-    {
-      "pollId": "9f586086-d7d7-49b0-ae25-488493f40241",
-      "pollTitle": "Night",
-      "notificationType": "expired",
-      "usersNotified": 1
-    }
-  ]
+   "success": true,
+   "totalNotificationsSent": 3,
+   "pollsProcessed": 3,
+   "results": [
+      {
+         "pollId": "a9d4146b-3571-477f-97fd-aec671d07a45",
+         "pollTitle": "My Name",
+         "notificationType": "expired",
+         "usersNotified": 1
+      },
+      {
+         "pollId": "f2060b4e-f8ec-4ed6-8a3a-36ff1d57e4d3",
+         "pollTitle": "My Question", 
+         "notificationType": "expired",
+         "usersNotified": 1
+      },
+      {
+         "pollId": "9f586086-d7d7-49b0-ae25-488493f40241",
+         "pollTitle": "Night",
+         "notificationType": "expired",
+         "usersNotified": 1
+      }
+   ]
 }
 ```
 
@@ -48,10 +48,11 @@ The email notification system has been successfully implemented and tested! Here
 ### Environment Variables (.env.local)
 ```
 # Supabase Configuration (✅ Working)
-NEXT_PUBLIC_SUPABASE_URL=https://***********.supabase.co
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
 # Email Configuration (✅ Working)  
-RESEND_API_KEY=re_your_api_key_hereFROM_EMAIL=onboarding@resend.dev
+RESEND_API_KEY=your_resend_api_key_here
+FROM_EMAIL=notifications@example.com
 
 # App Configuration
 APP_URL=http://localhost:3000
@@ -60,7 +61,7 @@ APP_URL=http://localhost:3000
 ### Edge Function Status
 - **Function Name**: `poll-notifications`
 - **Status**: ✅ Deployed and operational
-- **URL**: `https://caajeffvxkkhddzpttya.supabase.co/functions/v1/poll-notifications`
+- **URL**: `https://your-project.supabase.co/functions/v1/poll-notifications`
 - **Authentication**: Uses Supabase anon key
 - **Import Fix Applied**: ✅ Using Deno-compatible imports
 
@@ -75,8 +76,8 @@ npm run test:email
 
 **Status**: ✅ Working perfectly
 - Uses the Resend API directly
-- Sends test email from `onboarding@resend.dev`
-- Delivers to verified owner's email address (`bshayamano2002@gmail.com`)
+- Sends test email from `notifications@example.com`
+- Delivers to a verified test email address (`testuser@example.com`)
 
 ### Method 2: Test Edge Function ✅
 Test the complete notification pipeline:
@@ -106,7 +107,7 @@ Real-world scenario testing:
 1. **Environment File Parsing Error**: Fixed malformed `.env` files with invalid variable syntax
 2. **Edge Function Import Error**: Updated from Node.js imports to Deno-compatible ESM imports
 3. **Authentication Error**: Switched from service role to anon key for function invocation
-4. **Domain Verification**: Using Resend's verified `onboarding@resend.dev` domain
+4. **Domain Verification**: Using Resend's verified `notifications@example.com` domain
 
 ### Final Deployment Command
 ```bash
@@ -118,7 +119,7 @@ supabase functions deploy poll-notifications
 
 ### 1. Set Up Edge Function Secrets ✅
 ```bash
-supabase secrets set RESEND_API_KEY=''
+supabase secrets set RESEND_API_KEY='your_resend_api_key_here'
 supabase secrets set APP_URL=http://localhost:3000
 ```
 
@@ -136,15 +137,15 @@ Set up the function to run automatically:
 ### 4. Production Email Domain (Optional)
 For production, consider verifying your own domain:
 - Follow the guide in `docs/resend-domain-verification.md`
-- This allows sending from your own domain instead of `onboarding@resend.dev`
+- This allows sending from your own domain instead of `notifications@example.com`
 
 ## Troubleshooting (Previous Issues - Now Resolved)
 
 ### ✅ Fixed: Domain Verification Error
-**Solution Applied**: Using `onboarding@resend.dev` as FROM_EMAIL
+**Solution Applied**: Using `notifications@example.com` as FROM_EMAIL
 
 ### ✅ Fixed: Free Tier Recipient Limitation  
-**Solution Applied**: Sending only to verified owner's email
+**Solution Applied**: Sending only to verified test email
 
 ### ✅ Fixed: Function Not Found
 **Solution Applied**: Successfully deployed Edge Function
@@ -159,12 +160,12 @@ For production, consider verifying your own domain:
 
 ```mermaid
 graph TD
-    A[Supabase Cron/Manual Trigger] --> B[poll-notifications Edge Function]
-    B --> C[Query Database for Expiring Polls]
-    C --> D[Check User Notification Preferences]
-    D --> E[Send Emails via Resend API]
-    E --> F[Record Notifications in Database]
-    F --> G[Return Success Report]
+      A[Supabase Cron/Manual Trigger] --> B[poll-notifications Edge Function]
+      B --> C[Query Database for Expiring Polls]
+      C --> D[Check User Notification Preferences]
+      D --> E[Send Emails via Resend API]
+      E --> F[Record Notifications in Database]
+      F --> G[Return Success Report]
 ```
 
 **Status**: ✅ All components operational and tested
