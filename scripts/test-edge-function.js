@@ -33,8 +33,7 @@ if (!SERVICE_ROLE_KEY) {
 }
 
 async function invokeEdgeFunction() {
-  // Using the simplified function that should work more reliably
-  const functionName = 'simple-notifications';
+  const functionName = 'poll-notifications';
   const endpoint = `${SUPABASE_URL}/functions/v1/${functionName}`;
 
   console.log(`🔍 Invoking Edge Function: ${functionName}`);
