@@ -3,6 +3,7 @@
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { headers } from 'next/headers';
 import { Poll, PollOption } from '@/types/database';
+import { PollInterestTracker } from '@/lib/poll-interest-tracker';
 
 export async function createPoll(formData: {
   title: string;
@@ -78,6 +79,9 @@ export async function createPoll(formData: {
       
       throw new Error('Failed to create poll options');
     }
+    
+    // Track creator's interest in the poll for notifications
+    await PollInterestTracker.trackCreatorInterest(session.user.id, poll.id);
 
     return { success: true, pollId: poll.id };
   } catch (error) {

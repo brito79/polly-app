@@ -3,6 +3,7 @@
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
+import { PollInterestTracker } from '@/lib/poll-interest-tracker';
 
 export async function submitVote(pollId: string, optionIds: string[]) {
   try {
@@ -110,6 +111,11 @@ export async function submitVote(pollId: string, optionIds: string[]) {
 
     if (insertError) {
       throw new Error('Failed to submit vote');
+    }
+
+    // Track voter interest for email notifications (only for registered users)
+    if (session?.user?.id) {
+      await PollInterestTracker.trackVoterInterest(session.user.id, pollId);
     }
 
     // Revalidate the poll page to show updated results

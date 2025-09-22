@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Home, PlusCircle, BarChart3, User, Settings, LogOut, Shield } from "lucide-react";
+import { Menu, Home, PlusCircle, BarChart3, User, Settings, LogOut, Shield, Bell } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 /**
@@ -66,8 +66,8 @@ import { useAuth } from "@/context/AuthContext";
 export function Navbar() {
   // 📱 MOBILE NAVIGATION STATE: Sheet open/close state
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  // 🧭 NAVIGATION: Next.js router for programmatic navigation
-  const router = useRouter();
+  // 🧭 NAVIGATION: Next.js router for programmatic navigation after successful login/logout
+  const router = useRouter(); // Used in handleLogout for redirection
   // 👤 AUTHENTICATION: Current user and session state
   const { user, session, userRole, signOut, loading } = useAuth();
 
@@ -220,6 +220,13 @@ export function Navbar() {
                     <Link href="/settings" className="flex items-center">
                       <Settings className="mr-2 h-4 w-4" aria-hidden="true" />
                       Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  {/* 🔔 NOTIFICATION SETTINGS: User notification preferences */}
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings/notifications" className="flex items-center">
+                      <Bell className="mr-2 h-4 w-4" aria-hidden="true" />
+                      Notification Settings
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />

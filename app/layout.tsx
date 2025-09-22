@@ -4,6 +4,7 @@ import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { ConditionalFooter } from "@/components/layout/ConditionalFooter";
 import { AuthProvider } from "@/context/AuthContext";
+import { Toaster } from 'react-hot-toast';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,6 +39,24 @@ export default function RootLayout({
             </main>
             <ConditionalFooter />
           </div>
+          <Toaster position="top-right" toastOptions={{
+            success: {
+              style: {
+                background: '#10B981',
+                color: 'white',
+              },
+              iconTheme: {
+                primary: 'white',
+                secondary: '#10B981',
+              },
+            },
+            error: {
+              style: {
+                background: '#EF4444',
+                color: 'white',
+              },
+            }
+          }} />
         </AuthProvider>
       </body>
     </html>

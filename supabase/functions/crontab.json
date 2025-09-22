@@ -1,0 +1,20 @@
+{
+  "workspaces": {
+    "main": {
+      "tasks": [
+        {
+          "name": "poll_notifications_daily",
+          "schedule": "0 12 * * *",
+          "command": "poll-notifications",
+          "payload": { "type": "cron" }
+        },
+        {
+          "name": "poll_notifications_hourly",
+          "schedule": "0 * * * *",
+          "command": "poll-notifications",
+          "payload": { "type": "cron" }
+        }
+      ]
+    }
+  }
+}
