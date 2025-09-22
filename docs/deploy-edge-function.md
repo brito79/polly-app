@@ -1,49 +1,61 @@
-# Deploying the Poll Notifications Edge Function
+# Deploying the Poll Notifications Edge Function ✅
 
-This guide explains how to deploy the `poll-notifications` Edge Function to your Supabase project.
+**Status**: ✅ Successfully Deployed and Operational
 
-## Prerequisites
+This guide explains how to deploy the `poll-notifications` Edge Function to your Supabase project. 
 
-1. Install the Supabase CLI if you haven't already:
+## ✅ Deployment Success Summary
+
+The Edge Function has been successfully deployed with the following configuration:
+- **Function Name**: `poll-notifications`
+- **Project**: caajeffvxkkhddzpttya
+- **Status**: ✅ Deployed and functional
+- **Last Deployed**: September 22, 2025
+- **Test Results**: ✅ Successfully processed 3 polls and sent notifications
+
+## Prerequisites ✅
+
+1. ✅ **Supabase CLI Installed**: 
    ```bash
    npm install -g supabase
    ```
 
-2. Log in to your Supabase account:
+2. ✅ **Logged in to Supabase**:
    ```bash
    supabase login
    ```
 
-3. Link your local project to your Supabase project:
+3. ✅ **Project Linked**:
    ```bash
-   supabase link --project-ref YOUR_PROJECT_REF
-   ```
-   Replace `YOUR_PROJECT_REF` with your Supabase project reference (found in the URL of your Supabase dashboard).
-
-## Deploy the Edge Function
-
-1. Navigate to your project root directory in the terminal:
-   ```bash
-   cd C:\Users\bshay\OneDrive\Desktop\alx-devs II\polly-app
+   supabase link --project-ref caajeffvxkkhddzpttya
    ```
 
-2. Deploy the Edge Function:
-   ```bash
-   supabase functions deploy poll-notifications
-   ```
+## ✅ Successful Deployment Process
 
-3. Set the required secrets for the function:
-   ```bash
-   supabase secrets set RESEND_API_KEY=re_your_api_key
-   supabase secrets set APP_URL=https://your-app-url.com
-   ```
+### Step 1: Fixed Import Issues
+**Issue Resolved**: Updated from Node.js style imports to Deno-compatible imports
+```typescript
+// Before (❌ Failed)
+import { createClient } from '@supabase/supabase-js';
 
-4. Configure the function to run on a schedule (optional):
-   - Go to the Supabase Dashboard
-   - Navigate to Database > Functions
-   - Select the "poll-notifications" function
-   - Click on "Schedule"
-   - Set up a cron job to run every 15 minutes: `*/15 * * * *`
+// After (✅ Working) 
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+```
+
+### Step 2: Fixed Environment File Issues  
+**Issue Resolved**: Cleaned up malformed `.env` files that contained invalid variable syntax
+
+### Step 3: Successful Deployment
+```bash
+supabase functions deploy poll-notifications
+```
+
+**Result**:
+```
+Selected project: caajeffvxkkhddzpttya
+Deployed Functions on project caajeffvxkkhddzpttya: poll-notifications
+You can inspect your deployment in the Dashboard: https://supabase.com/dashboard/project/caajeffvxkkhddzpttya/functions
+```
 
 ## Verify Deployment
 

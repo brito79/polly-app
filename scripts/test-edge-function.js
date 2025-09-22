@@ -17,8 +17,8 @@ dotenv.config({ path: '.env.local' });
 
 // Supabase project URL (required)
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-// Service role key provides admin access (required for Edge Functions)
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ACCESS_TOKEN;
+// Try using the anon key first, then fall back to access token
+const SERVICE_ROLE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ACCESS_TOKEN;
 
 // Check for required environment variables
 if (!SUPABASE_URL) {

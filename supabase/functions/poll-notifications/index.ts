@@ -1,5 +1,5 @@
 // @ts-check
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 /**
  * @fileoverview Supabase Edge Function for Poll Notifications
