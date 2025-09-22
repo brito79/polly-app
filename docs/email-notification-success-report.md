@@ -83,8 +83,7 @@ Deployed Functions on project caajeffvxkkhddzpttya: poll-notifications
 ### Environment Variables
 ```bash
 # Production secrets (to be set)
-supabase secrets set RESEND_API_KEY=re_9Jy7BzyA_ECtbstDwwSEBB4g7Ej4SPteS
-supabase secrets set APP_URL=http://localhost:3000
+supabase secrets set RESEND_API_KEY=re_your_api_key_heresupabase secrets set APP_URL=http://localhost:3000
 ```
 
 ## 🔧 Issues Resolved During Implementation

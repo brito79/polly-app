@@ -48,12 +48,10 @@ The email notification system has been successfully implemented and tested! Here
 ### Environment Variables (.env.local)
 ```
 # Supabase Configuration (✅ Working)
-NEXT_PUBLIC_SUPABASE_URL=https://caajeffvxkkhddzpttya.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-
+NEXT_PUBLIC_SUPABASE_URL=https://***********.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
 # Email Configuration (✅ Working)  
-RESEND_API_KEY=re_9Jy7BzyA_ECtbstDwwSEBB4g7Ej4SPteS
-FROM_EMAIL=onboarding@resend.dev
+RESEND_API_KEY=re_your_api_key_hereFROM_EMAIL=onboarding@resend.dev
 
 # App Configuration
 APP_URL=http://localhost:3000
